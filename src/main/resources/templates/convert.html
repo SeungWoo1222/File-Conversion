@@ -135,7 +135,7 @@
                         </div>
 
                         <div class="d-grid">
-                            <button type="submit" class="btn btn-neon">변환 프로세스 시작</button>
+                            <button type="submit" class="btn btn-neon">변환 시작</button>
                         </div>
                     </form>
                 </div>
@@ -148,24 +148,56 @@
     function updateFileList() {
         const input = document.getElementById('fileInput');
         const list = document.getElementById('fileList');
+        const files = Array.from(input.files);
+
         list.innerHTML = '';
 
-        if (input.files.length === 0) {
+        if (files.length === 0) {
             list.innerHTML = '<li class="list-group-item text-muted text-center border-0">파일을 드래그하거나 선택하세요</li>';
             return;
         }
 
-        Array.from(input.files).forEach((file, index) => {
+        files.forEach((file, index) => {
             const li = document.createElement('li');
-            li.className = 'list-group-item d-flex justify-content-between align-items-center px-2';
+            // 상대 위치(position-relative)를 주어 버튼 배치를 자유롭게 합니다.
+            li.className = 'list-group-item d-flex justify-content-between align-items-center px-3 py-3 position-relative';
+
             const fileSize = (file.size / 1024).toFixed(1) + ' KB';
+
             li.innerHTML = `
-                <span class="text-truncate" style="max-width: 70%;">${file.name}</span>
-                <span class="badge bg-dark text-indigo-300 border border-secondary">${fileSize}</span>
+                <div class="text-truncate" style="max-width: 80%;">
+                    <span class="text-white d-block mb-1">${file.name}</span>
+                    <span class="badge bg-dark text-indigo-300 border border-secondary" style="font-size: 0.75rem;">${fileSize}</span>
+                </div>
+                <button type="button"
+                        class="btn-close btn-close-white position-absolute"
+                        style="top: 10px; right: 10px; font-size: 0.7rem; opacity: 0.5;"
+                        onclick="removeFile(${index})"
+                        aria-label="Remove"></button>
             `;
             list.appendChild(li);
         });
     }
+
+    // 실제 input 태그의 FileList에서 파일을 제거하는 함수
+    function removeFile(index) {
+        const input = document.getElementById('fileInput');
+        const dataTransfer = new DataTransfer();
+        const files = Array.from(input.files);
+
+        // 삭제할 인덱스만 제외하고 새로운 DataTransfer 객체에 담기
+        files.filter((_, i) => i !== index).forEach(file => {
+            dataTransfer.items.add(file);
+        });
+
+        // input의 파일을 업데이트 (이후 form 전송 시 반영됨)
+        input.files = dataTransfer.files;
+
+        // UI 동기화
+        updateFileList();
+    }
+
+
 </script>
 
 </body>
