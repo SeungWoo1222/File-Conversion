@@ -1,0 +1,71 @@
+services:
+  rabbitmq:
+    #    restart: unless-stopped
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_VHOST: /
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - ./rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  producer:
+    build: .
+    container_name: rabbitmq-producer
+    ports:
+      - "8080:8080"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
+      SPRING_RABBITMQ_VIRTUAL_HOST: /
+      SPRING_DATASOURCE_URL: jdbc:mysql://host.docker.internal:3306/fileconv?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: app
+      SPRING_DATASOURCE_PASSWORD: apppw123!
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q '\"status\":\"UP\"'" ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  #  mysql:
+  #    image: mysql:8.0
+  #    container_name: mysql
+  #    ports:
+  #      - "3306:3306"
+  #    environment:
+  ##      MYSQL_ROOT_PASSWORD: rootpw
+  ##      MYSQL_DATABASE: fileconversion
+  ##      MYSQL_USER: toyboyz
+  ##      MYSQL_PASSWORD: toytoy123
+  #    command:
+  #      - "--server-id=223344"
+  #      - "--log-bin=mysql-bin"
+  #      - "--binlog-format=ROW"
+  #      - "--binlog-row-image=FULL"
+  #    volumes:
+  #      - ./mysql/init:/docker-entrypoint-initdb.d
+
+  debezium-server:
+    image: quay.io/debezium/server:3.4
+    container_name: debezium-server
+    depends_on:
+      producer:
+        condition: service_healthy
+    volumes:
+      - ./debezium/config:/debezium/config
+      - ./debezium/data:/debezium/data
