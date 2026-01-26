@@ -1,6 +1,5 @@
 services:
   rabbitmq:
-    #    restart: unless-stopped
     image: rabbitmq:3-management
     container_name: rabbitmq
     ports:
@@ -64,7 +63,7 @@ services:
     image: quay.io/debezium/server:3.4
     container_name: debezium-server
     depends_on:
-      producer:
+      rabbitmq:
         condition: service_healthy
     volumes:
       - ./debezium/config:/debezium/config
