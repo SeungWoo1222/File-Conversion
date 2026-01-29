@@ -5,9 +5,9 @@
     <meta charset="UTF-8">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        /* 1. 딥 다크 배경 */
+        /* [기존 스타일 유지] */
         body {
-            background-color: #0f172a; /* Slate 900 */
+            background-color: #0f172a;
             background-image: radial-gradient(at 0% 0%, rgba(30, 58, 138, 0.5) 0, transparent 50%),
                               radial-gradient(at 50% 0%, rgba(76, 29, 149, 0.4) 0, transparent 50%);
             min-height: 100vh;
@@ -17,38 +17,27 @@
             font-family: 'Inter', sans-serif;
         }
 
-                /* 제목 텍스트 그라데이션 효과 */
         .bright-title {
-            background: linear-gradient(to right, #ffffff, #a5b4fc, #c084fc); /* 흰색에서 연보라로 */
+            background: linear-gradient(to right, #ffffff, #a5b4fc, #c084fc);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             font-size: 2.2rem;
             letter-spacing: -1px;
-            text-shadow: 0 0 20px rgba(129, 140, 248, 0.4); /* 은은한 네온 광택 */
+            text-shadow: 0 0 20px rgba(129, 140, 248, 0.4);
         }
 
-        /* 서브 텍스트도 조금 더 밝게 */
-        .sub-title {
-            color: #94a3b8 !important; /* Slate 400 */
-            font-weight: 500;
-        }
+        .sub-title { color: #94a3b8 !important; font-weight: 500; }
 
-        /* 2. 카드: 다크 글래스모피즘 */
         .card {
-            background: rgba(30, 41, 59, 0.7); /* Slate 800 + Alpha */
+            background: rgba(30, 41, 59, 0.7);
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 24px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
 
-        .card-header {
-            background: transparent;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 30px;
-        }
+        .card-header { background: transparent; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding: 30px; }
 
-        /* 3. 입력창 스타일 커스텀 */
         .form-control, .form-select {
             background-color: rgba(15, 23, 42, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -63,7 +52,6 @@
             box-shadow: 0 0 0 4px rgba(129, 140, 248, 0.2);
         }
 
-        /* 4. 파일 목록 영역 */
         .file-list-container {
             background: rgba(15, 23, 42, 0.4);
             border-radius: 12px;
@@ -71,13 +59,8 @@
             overflow-y: auto;
         }
 
-        .list-group-item {
-            background: transparent;
-            color: #cbd5e1;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
+        .list-group-item { background: transparent; color: #cbd5e1; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
 
-        /* 5. 네온 버튼 */
         .btn-neon {
             background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
             border: none;
@@ -88,13 +71,14 @@
             transition: all 0.3s ease;
         }
 
-        .btn-neon:hover {
+        .btn-neon:hover:not(:disabled) {
             box-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
             transform: scale(1.02);
             color: white;
         }
 
-        /* 스크롤바 커스텀 */
+        .btn-neon:disabled { opacity: 0.6; cursor: not-allowed; }
+
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
     </style>
@@ -110,15 +94,14 @@
                     <p class="sub-title small mb-0">안전하고 빠른 파일 변환 서비스</p>
                 </div>
                 <div class="card-body p-4">
-                    <form action="/upload" method="post" enctype="multipart/form-data">
-
+                    <form id="uploadForm">
                         <div class="mb-4">
-                            <label class="form-label small text-uppercase tracking-wider fw-bold text-indigo-300">파일 업로드</label>
-                            <input class="form-control" type="file" id="fileInput" name="file" multiple onchange="updateFileList()" required>
+                            <label class="form-label small text-uppercase fw-bold text-indigo-300" style="color:#a5b4fc">파일 업로드</label>
+                            <input class="form-control" type="file" id="fileInput" name="files" multiple onchange="updateFileList()" required>
                         </div>
 
                         <div class="mb-4">
-                            <label class="form-label small text-uppercase fw-bold text-indigo-300">선택된 파일 목록</label>
+                            <label class="form-label small text-uppercase fw-bold text-indigo-300" style="color:#a5b4fc">선택된 파일 목록</label>
                             <div class="file-list-container p-2">
                                 <ul id="fileList" class="list-group list-group-flush">
                                     <li class="list-group-item text-muted text-center border-0">파일을 드래그하거나 선택하세요</li>
@@ -127,7 +110,7 @@
                         </div>
 
                         <div class="mb-4">
-                            <label class="form-label small text-uppercase fw-bold text-indigo-300">변환 포맷</label>
+                            <label class="form-label small text-uppercase fw-bold text-indigo-300" style="color:#a5b4fc">변환 포맷</label>
                             <select class="form-select" name="targetFormat" required>
                                 <option value="" disabled selected>포맷 선택</option>
                                 <option th:each="format : ${formats}" th:value="${format}" th:text="${format}">PDF</option>
@@ -135,7 +118,7 @@
                         </div>
 
                         <div class="d-grid">
-                            <button type="submit" class="btn btn-neon">변환 시작</button>
+                            <button type="submit" id="submitBtn" class="btn btn-neon">변환 시작</button>
                         </div>
                     </form>
                 </div>
@@ -145,6 +128,7 @@
 </div>
 
 <script>
+    // 1. 파일 목록 업데이트 (UI)
     function updateFileList() {
         const input = document.getElementById('fileInput');
         const list = document.getElementById('fileList');
@@ -159,15 +143,13 @@
 
         files.forEach((file, index) => {
             const li = document.createElement('li');
-            // 상대 위치(position-relative)를 주어 버튼 배치를 자유롭게 합니다.
             li.className = 'list-group-item d-flex justify-content-between align-items-center px-3 py-3 position-relative';
-
             const fileSize = (file.size / 1024).toFixed(1) + ' KB';
 
             li.innerHTML = `
                 <div class="text-truncate" style="max-width: 80%;">
                     <span class="text-white d-block mb-1">${file.name}</span>
-                    <span class="badge bg-dark text-indigo-300 border border-secondary" style="font-size: 0.75rem;">${fileSize}</span>
+                    <span class="badge bg-dark text-info border border-secondary" style="font-size: 0.75rem; color: #a5b4fc !important;">${fileSize}</span>
                 </div>
                 <button type="button"
                         class="btn-close btn-close-white position-absolute"
@@ -179,25 +161,51 @@
         });
     }
 
-    // 실제 input 태그의 FileList에서 파일을 제거하는 함수
+    // 2. 파일 개별 삭제 로직
     function removeFile(index) {
         const input = document.getElementById('fileInput');
         const dataTransfer = new DataTransfer();
         const files = Array.from(input.files);
 
-        // 삭제할 인덱스만 제외하고 새로운 DataTransfer 객체에 담기
         files.filter((_, i) => i !== index).forEach(file => {
             dataTransfer.items.add(file);
         });
 
-        // input의 파일을 업데이트 (이후 form 전송 시 반영됨)
         input.files = dataTransfer.files;
-
-        // UI 동기화
         updateFileList();
     }
 
+    // 3. 서버 전송 로직 (Fetch API)
+document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
 
+    const btn = document.getElementById('submitBtn');
+    const formData = new FormData(this);
+
+    btn.disabled = true;
+    btn.innerText = '처리 중...';
+
+    try {
+        // 1. 경로를 '/file/upload'로 수정
+        const response = await fetch('/file/upload', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (response.ok) {
+            alert('파일 업로드가 완료되었습니다!');
+        } else {
+            // 404가 뜬다면 브라우저 콘솔(F12) Network 탭에서 Request URL을 확인해보세요.
+            alert('에러 발생: ' + response.status);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('서버 연결 오류');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = '변환 시작';
+    }
+});
 </script>
 
 </body>

@@ -1,4 +1,4 @@
-package com.toyboyz.fileconversion.api.entity;
+package com.toyboyz.fileconversion.api.history.entity;
 
 import com.toyboyz.fileconversion.config.BaseTime;
 import jakarta.persistence.*;
