@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.List;
+
 @Controller
 @RequestMapping("/file")
 @RequiredArgsConstructor
@@ -19,21 +21,13 @@ public class FileController {
 
     private final FileService fileService;
 
+    //파일 변환 요청 시 해당 컨트롤러 호출
+    //파일을 s3로 전송 + 기록 저장
+    //Debezium 이 기록을 캡처해서 큐로 보내야함
     @PostMapping("/upload")
-    public ResponseEntity<?> fileUpload(@RequestParam("files")MultipartFile[] files,
+    public ResponseEntity<?> fileUpload(@RequestParam("files") List<MultipartFile> files,
                                        @RequestParam("targetFormat") String targetFormat) {
-
-        StringBuilder sb = new StringBuilder();
-        sb.append(targetFormat).append("\n");
-        for (MultipartFile file : files) {
-            sb.append(file.getOriginalFilename()).append("\n");
-            System.out.println(file.getSize());
-            sb.append(file.getSize()).append("\n");
-            sb.append(file.getContentType()).append("\n");
-            sb.append(file.getResource()).append("\n");
-        }
-        System.out.println(sb);
-
+        fileService.sendToS3(files,targetFormat);
         return new ResponseEntity<>(HttpStatus.OK);
 
     }
