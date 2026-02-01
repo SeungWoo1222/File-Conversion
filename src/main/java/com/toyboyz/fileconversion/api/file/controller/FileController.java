@@ -1,14 +1,12 @@
 package com.toyboyz.fileconversion.api.file.controller;
 
 import com.toyboyz.fileconversion.api.file.service.FileService;
+import com.toyboyz.fileconversion.api.history.entity.History;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -26,9 +24,10 @@ public class FileController {
     //Debezium 이 기록을 캡처해서 큐로 보내야함
     @PostMapping("/upload")
     public ResponseEntity<?> fileUpload(@RequestParam("files") List<MultipartFile> files,
-                                       @RequestParam("targetFormat") String targetFormat) {
-        fileService.sendToS3(files,targetFormat);
-        return new ResponseEntity<>(HttpStatus.OK);
+                                        @RequestParam("targetFormat") String targetFormat,
+                                        @RequestParam("uuid") String uuid) {
+        List<History> res = fileService.sendToS3(files,targetFormat,uuid);
+        return new ResponseEntity<>(res,HttpStatus.OK);
 
     }
 }

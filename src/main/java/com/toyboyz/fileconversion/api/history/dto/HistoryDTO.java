@@ -1,19 +1,16 @@
 package com.toyboyz.fileconversion.api.history.dto;
 
 import jakarta.persistence.Column;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @AllArgsConstructor
 @NoArgsConstructor
-@Setter
+@Data
+@Builder
 public class HistoryDTO {
     private Long historyId;
     private String uuid;
-    private String fileName;
-    private String originalFile;
+    private String convertedFormat;
     private String convertedFile;
     private String status;
 }

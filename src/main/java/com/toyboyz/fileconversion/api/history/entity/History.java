@@ -43,6 +43,11 @@ public class History extends BaseTime {
 
 
     //파일 변환 상태
-    @Column(length = 1,columnDefinition = "1")
+    @Column(length = 1)
     private String status;
+
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
 }
