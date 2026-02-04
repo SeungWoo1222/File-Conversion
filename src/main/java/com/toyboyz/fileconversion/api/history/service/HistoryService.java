@@ -26,6 +26,7 @@ public class HistoryService {
     private final HistoryRepository historyRepository;
     private final ApplicationEventPublisher eventPublisher;
 
+    //DTO 반환으로 리팩토링 대상
     @Transactional
     public List<History> saveHistory(List<MultipartFile> fileList,String format,String uuid) {
         ArrayList<History> saveList = new ArrayList<>();

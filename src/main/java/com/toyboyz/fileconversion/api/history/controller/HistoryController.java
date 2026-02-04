@@ -19,10 +19,4 @@ import java.util.UUID;
 @RequestMapping("/api/history")
 @RequiredArgsConstructor
 public class HistoryController {
-
-
-
-
-
-
 }

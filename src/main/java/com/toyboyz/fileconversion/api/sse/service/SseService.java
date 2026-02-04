@@ -26,7 +26,6 @@ public class SseService {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleHistoryEvent(History history) {
-        System.out.println("이벤트 리스너 ");
         notify(history);
     }
 

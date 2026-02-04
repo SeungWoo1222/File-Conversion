@@ -11,7 +11,6 @@ public class SseEmitterRegistry {
 
     private final Map<String, SseEmitter> emitters = new ConcurrentHashMap<>();
 
-    //에미터 추가
     public void addEmitter(String uuid, SseEmitter emitter) {
         emitters.put(uuid,emitter);
     }
@@ -24,11 +23,10 @@ public class SseEmitterRegistry {
         return emitters;
     }
 
-
-    //에미터 제거
     public void removeEmitter(String uuid) {
         emitters.remove(uuid);
     }
+
 
     //에미터 에러 핸들링
     public void completeAndRemoveEmitter(String uuid) {
