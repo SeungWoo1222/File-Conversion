@@ -1,83 +1,40 @@
 <!DOCTYPE HTML>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Dark File Converter</title>
+    <title>Dark File Converter - Convert & Status</title>
     <meta charset="UTF-8">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        /* 1. 딥 다크 배경 */
         body {
-            background-color: #0f172a; /* Slate 900 */
+            background-color: #0f172a;
             background-image: radial-gradient(at 0% 0%, rgba(30, 58, 138, 0.5) 0, transparent 50%),
                               radial-gradient(at 50% 0%, rgba(76, 29, 149, 0.4) 0, transparent 50%);
             min-height: 100vh;
-            display: flex;
-            align-items: center;
             color: #f8fafc;
             font-family: 'Inter', sans-serif;
+            padding: 50px 0;
         }
-
-                /* 제목 텍스트 그라데이션 효과 */
         .bright-title {
-            background: linear-gradient(to right, #ffffff, #a5b4fc, #c084fc); /* 흰색에서 연보라로 */
+            background: linear-gradient(to right, #ffffff, #a5b4fc, #c084fc);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             font-size: 2.2rem;
-            letter-spacing: -1px;
-            text-shadow: 0 0 20px rgba(129, 140, 248, 0.4); /* 은은한 네온 광택 */
+            text-shadow: 0 0 20px rgba(129, 140, 248, 0.4);
         }
-
-        /* 서브 텍스트도 조금 더 밝게 */
-        .sub-title {
-            color: #94a3b8 !important; /* Slate 400 */
-            font-weight: 500;
-        }
-
-        /* 2. 카드: 다크 글래스모피즘 */
         .card {
-            background: rgba(30, 41, 59, 0.7); /* Slate 800 + Alpha */
+            background: rgba(30, 41, 59, 0.7);
             backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 24px;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            margin-bottom: 2rem;
         }
-
-        .card-header {
-            background: transparent;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 30px;
-        }
-
-        /* 3. 입력창 스타일 커스텀 */
         .form-control, .form-select {
             background-color: rgba(15, 23, 42, 0.6);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: #fff;
             border-radius: 12px;
         }
-
-        .form-control:focus, .form-select:focus {
-            background-color: rgba(15, 23, 42, 0.8);
-            color: #fff;
-            border-color: #818cf8;
-            box-shadow: 0 0 0 4px rgba(129, 140, 248, 0.2);
-        }
-
-        /* 4. 파일 목록 영역 */
-        .file-list-container {
-            background: rgba(15, 23, 42, 0.4);
-            border-radius: 12px;
-            max-height: 180px;
-            overflow-y: auto;
-        }
-
-        .list-group-item {
-            background: transparent;
-            color: #cbd5e1;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        /* 5. 네온 버튼 */
         .btn-neon {
             background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
             border: none;
@@ -87,118 +44,253 @@
             border-radius: 12px;
             transition: all 0.3s ease;
         }
-
-        .btn-neon:hover {
-            box-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
-            transform: scale(1.02);
-            color: white;
+        .file-list-container {
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 12px;
+            max-height: 150px;
+            overflow-y: auto;
         }
-
-        /* 스크롤바 커스텀 */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+        /* 상태 테이블 스타일 */
+        .table { color: #cbd5e1; }
+        .table-dark-custom { background: rgba(15, 23, 42, 0.4); border-radius: 15px; overflow: hidden; }
+        .update-highlight { animation: flash 2s; }
+        @keyframes flash {
+            0% { background-color: rgba(99, 102, 241, 0.3); }
+            100% { background-color: transparent; }
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="row justify-content-center">
-        <div class="col-md-5">
-            <div class="card p-2">
-                <div class="card-header text-center">
+        <div class="col-md-7">
+
+            <div class="card p-4">
+                <div class="text-center mb-4">
                     <h2 class="fw-bold bright-title">File Converter</h2>
-                    <p class="sub-title small mb-0">안전하고 빠른 파일 변환 서비스</p>
+                    <p class="text-secondary small">변환 요청 후 하단에서 실시간 상태를 확인하세요</p>
                 </div>
-                <div class="card-body p-4">
-                    <form action="/upload" method="post" enctype="multipart/form-data">
 
-                        <div class="mb-4">
-                            <label class="form-label small text-uppercase tracking-wider fw-bold text-indigo-300">파일 업로드</label>
-                            <input class="form-control" type="file" id="fileInput" name="file" multiple onchange="updateFileList()" required>
-                        </div>
+                <form id="uploadForm">
+                    <div class="mb-4">
+                        <label class="form-label small text-uppercase fw-bold" style="color:#a5b4fc">파일 업로드</label>
+                        <input class="form-control" type="file" id="fileInput" name="files" multiple onchange="updateFileList()" required>
+                    </div>
 
-                        <div class="mb-4">
-                            <label class="form-label small text-uppercase fw-bold text-indigo-300">선택된 파일 목록</label>
-                            <div class="file-list-container p-2">
-                                <ul id="fileList" class="list-group list-group-flush">
-                                    <li class="list-group-item text-muted text-center border-0">파일을 드래그하거나 선택하세요</li>
-                                </ul>
-                            </div>
+                    <div class="mb-4">
+                        <label class="form-label small text-uppercase fw-bold" style="color:#a5b4fc">선택된 파일 목록</label>
+                        <div class="file-list-container p-2">
+                            <ul id="fileList" class="list-group list-group-flush">
+                                <li class="list-group-item text-muted text-center border-0" style="background:transparent">파일을 선택하세요</li>
+                            </ul>
                         </div>
+                    </div>
 
-                        <div class="mb-4">
-                            <label class="form-label small text-uppercase fw-bold text-indigo-300">변환 포맷</label>
-                            <select class="form-select" name="targetFormat" required>
-                                <option value="" disabled selected>포맷 선택</option>
-                                <option th:each="format : ${formats}" th:value="${format}" th:text="${format}">PDF</option>
-                            </select>
-                        </div>
+                    <div class="mb-4">
+                        <label class="form-label small text-uppercase fw-bold text-indigo-300">변환 포맷</label>
+                        <select class="form-select" name="targetFormat" required>
+                            <option value="" disabled selected>포맷 선택</option>
+                            <option th:each="format : ${formats}" th:value="${format}" th:text="${format}">PDF</option>
+                        </select>
+                    </div>
 
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-neon">변환 시작</button>
-                        </div>
-                    </form>
+                    <div class="d-grid">
+                        <button type="submit" id="submitBtn" class="btn btn-neon">변환 시작</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card p-4">
+                <h5 class="fw-bold mb-3" style="color:#a5b4fc">실시간 변환 상태</h5>
+                <div class="table-responsive table-dark-custom">
+                    <table class="table mb-0">
+                        <thead style="background: rgba(255,255,255,0.05)">
+                        <tr>
+                            <th>파일명</th>
+                            <th class="text-center">상태</th>
+                            <th>메시지</th>
+                        </tr>
+                        </thead>
+                        <tbody id="status-tbody">
+                        <tr th:each="history : ${histories}" class="history-row" th:data-id="${history.historyId}">
+                            <td th:text="${history.originalFile}" class="text-truncate" style="max-width: 200px;">file.png</td>
+                            <td class="status-cell text-center">
+                                <span class="badge" th:classappend="${history.status == '3' ? 'bg-success' : 'bg-secondary'}" th:text="${history.status}">1</span>
+                            </td>
+                            <td class="message-cell small text-secondary">-</td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(histories)}" id="empty-row">
+                            <td colspan="3" class="text-center text-muted p-4">변환 내역이 없습니다.</td>
+                        </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
+
         </div>
     </div>
 </div>
 
-<script>
+<script th:inline="javascript">
+    // 1. UUID 관리 (localStorage로 고정)
+    function getOrCreateUuid() {
+        let uuid = localStorage.getItem('uuid');
+        if (!uuid) {
+            uuid = crypto.randomUUID();
+            localStorage.setItem('uuid', uuid);
+        }
+        return uuid;
+    }
+    const myUuid = getOrCreateUuid();
+
+    // 2. SSE 연결 및 데이터 수신
+    function initSse(uuid) {
+        console.log("📍 SSE 연결 중... UUID:", uuid);
+        const eventSource = new EventSource(`/api/sse/connect/${uuid}`);
+
+        eventSource.addEventListener('history-update', (event) => {
+            const data = JSON.parse(event.data);
+            console.log("🔔 상태 업데이트 수신:", data);
+            updateStatusUI(data);
+        });
+
+        eventSource.onopen = () => console.log("✅ SSE 연결 성공");
+        eventSource.onerror = () => eventSource.close();
+    }
+
+    // 수신한 데이터를 기반으로 테이블의 특정 행을 찾아 변경
+    function updateStatusUI(data) {
+        const row = document.querySelector(`tr[data-id="${data.id || data.historyId}"]`);
+        if (row) {
+            const statusCell = row.querySelector('.status-cell');
+            const messageCell = row.querySelector('.message-cell');
+
+            let badgeClass = data.status === '3' ? 'bg-success' : (data.status === '2' ? 'bg-primary' : 'bg-secondary');
+
+            statusCell.innerHTML = `<span class="badge ${badgeClass}">${statusText}</span>`;
+            messageCell.innerText = data.message;
+
+            // 업데이트 효과
+            row.classList.add('update-highlight');
+            setTimeout(() => row.classList.remove('update-highlight'), 2000);
+        }
+    }
+
+    initSse(myUuid);
+
+    // 3. 파일 업로드 로직 (기존 유지 + 파라미터 고정)
     function updateFileList() {
         const input = document.getElementById('fileInput');
         const list = document.getElementById('fileList');
-        const files = Array.from(input.files);
-
         list.innerHTML = '';
-
-        if (files.length === 0) {
-            list.innerHTML = '<li class="list-group-item text-muted text-center border-0">파일을 드래그하거나 선택하세요</li>';
+        if (input.files.length === 0) {
+            list.innerHTML = '<li class="list-group-item text-muted text-center border-0" style="background:transparent">파일을 선택하세요</li>';
             return;
         }
-
-        files.forEach((file, index) => {
+        Array.from(input.files).forEach(f => {
             const li = document.createElement('li');
-            // 상대 위치(position-relative)를 주어 버튼 배치를 자유롭게 합니다.
-            li.className = 'list-group-item d-flex justify-content-between align-items-center px-3 py-3 position-relative';
-
-            const fileSize = (file.size / 1024).toFixed(1) + ' KB';
-
-            li.innerHTML = `
-                <div class="text-truncate" style="max-width: 80%;">
-                    <span class="text-white d-block mb-1">${file.name}</span>
-                    <span class="badge bg-dark text-indigo-300 border border-secondary" style="font-size: 0.75rem;">${fileSize}</span>
-                </div>
-                <button type="button"
-                        class="btn-close btn-close-white position-absolute"
-                        style="top: 10px; right: 10px; font-size: 0.7rem; opacity: 0.5;"
-                        onclick="removeFile(${index})"
-                        aria-label="Remove"></button>
-            `;
+            li.className = 'list-group-item text-white border-0 py-2';
+            li.style.background = 'transparent';
+            li.innerText = f.name;
             list.appendChild(li);
         });
     }
 
-    // 실제 input 태그의 FileList에서 파일을 제거하는 함수
-    function removeFile(index) {
-        const input = document.getElementById('fileInput');
-        const dataTransfer = new DataTransfer();
-        const files = Array.from(input.files);
+document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    const formData = new FormData(this);
+    formData.append('uuid', myUuid);
 
-        // 삭제할 인덱스만 제외하고 새로운 DataTransfer 객체에 담기
-        files.filter((_, i) => i !== index).forEach(file => {
-            dataTransfer.items.add(file);
-        });
+    btn.disabled = true;
+    btn.innerText = "업로드 중...";
 
-        // input의 파일을 업데이트 (이후 form 전송 시 반영됨)
-        input.files = dataTransfer.files;
+    try {
+        const response = await fetch('/file/upload', { method: 'POST', body: formData });
 
-        // UI 동기화
-        updateFileList();
+        if (response.ok) {
+            const text = await response.text();
+            if (!text) {
+                location.reload();
+                return;
+            }
+            const newHistories = JSON.parse(text);
+
+            const emptyRow = document.getElementById('empty-row');
+            if (emptyRow) emptyRow.remove();
+
+            const tbody = document.getElementById('status-tbody');
+
+            newHistories.forEach(history => {
+                const row = document.createElement('tr');
+                row.className = 'history-row update-highlight';
+                row.setAttribute('data-id', history.historyId);
+
+                // [수정] 상태값 판별 로직 (문자열/숫자 모두 대응)
+                let statusText = "대기 중";
+                let badgeClass = "bg-secondary";
+
+                if (history.status == '2') {
+                    statusText = "진행 중";
+                    badgeClass = "bg-primary";
+                } else if (history.status == '3') {
+                    statusText = "완료";
+                    badgeClass = "bg-success";
+                }
+
+                row.innerHTML = `
+                    <td class="text-truncate" style="max-width: 200px;">${history.originalFile}</td>
+                    <td class="status-cell text-center">
+                        <span class="badge ${badgeClass}">${statusText}</span>
+                    </td>
+                    <td class="message-cell small text-secondary">${history.message || '-'}</td>
+                `;
+                tbody.prepend(row);
+            });
+
+            this.reset();
+            document.getElementById('fileList').innerHTML = '<li class="list-group-item text-muted text-center border-0" style="background:transparent">파일을 선택하세요</li>';
+
+            btn.disabled = false;
+            btn.innerText = "변환 시작";
+        }
+    } catch (err) {
+        console.error("❌ 업로드 실패:", err);
+        btn.disabled = false;
+        btn.innerText = "변환 시작";
+        alert("업로드 처리 중 오류가 발생했습니다.");
     }
+});
 
+// [필수 추가] 실시간 상태 업데이트 함수도 동일하게 수정해야 숫자가 한글로 바뀝니다.
+function updateStatusUI(data) {
+    // data.id 또는 data.historyId 등 서버에서 내려주는 키값 확인 필요
+    const row = document.querySelector(`tr[data-id="${data.id || data.historyId}"]`);
+    if (row) {
+        const statusCell = row.querySelector('.status-cell');
+        const messageCell = row.querySelector('.message-cell');
 
+        // [수정] 실시간 데이터에 대한 상태 판별
+        let statusText = "대기 중";
+        let badgeClass = "bg-secondary";
+
+        if (data.status == '2') {
+            statusText = "진행 중";
+            badgeClass = "bg-primary";
+        } else if (data.status == '3') {
+            statusText = "완료";
+            badgeClass = "bg-success";
+        }
+
+        statusCell.innerHTML = `<span class="badge ${badgeClass}">${statusText}</span>`;
+        messageCell.innerText = data.message;
+
+        // 시각적 피드백 효과
+        row.classList.add('update-highlight');
+        setTimeout(() => row.classList.remove('update-highlight'), 2000);
+    }
+}
 </script>
-
 </body>
 </html>
