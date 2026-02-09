@@ -1,0 +1,50 @@
+name: deploy
+
+on:
+  push:
+    branches: ["develop"]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: ap-northeast-2
+      ECR_REPOSITORY: myapp
+      EC2_TARGET_TAG_KEY: Name
+      EC2_TARGET_TAG_VALUE: my-ec2
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::188615717003:role/Role-GitHubActions-Deploy
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build & Push
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          ECR="$ACCOUNT_ID.dkr.ecr.${AWS_REGION}.amazonaws.com"
+          TAG="${GITHUB_SHA}"
+
+          docker build -t "$ECR/${ECR_REPOSITORY}:$TAG" .
+          docker push "$ECR/${ECR_REPOSITORY}:$TAG"
+
+          echo "IMAGE_TAG=$TAG" >> $GITHUB_ENV
+
+      - name: Deploy via SSM
+        run: |
+          aws ssm send-command \
+            --document-name "AWS-RunShellScript" \
+            --targets "Key=tag:${EC2_TARGET_TAG_KEY},Values=${EC2_TARGET_TAG_VALUE}" \
+            --parameters commands="sudo /opt/app/deploy.sh ${IMAGE_TAG}" \
+            --comment "Deploy ${IMAGE_TAG}"
