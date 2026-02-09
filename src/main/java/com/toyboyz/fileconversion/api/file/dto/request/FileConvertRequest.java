@@ -1,4 +1,4 @@
-package com.toyboyz.fileconversion.api.dto.request;
+package com.toyboyz.fileconversion.api.file.dto.request;
 
 import lombok.*;
 

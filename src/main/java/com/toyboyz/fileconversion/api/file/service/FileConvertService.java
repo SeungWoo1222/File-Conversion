@@ -1,9 +1,10 @@
-package com.toyboyz.fileconversion.api.service;
+package com.toyboyz.fileconversion.api.file.service;
 
-import com.toyboyz.fileconversion.api.dto.request.FileConvertRequest;
-import com.toyboyz.fileconversion.api.dto.response.FileConvertResponse;
-import com.toyboyz.fileconversion.api.entity.History;
-import com.toyboyz.fileconversion.api.repository.HistoryRepository;
+import com.toyboyz.fileconversion.api.file.dto.request.FileConvertRequest;
+import com.toyboyz.fileconversion.api.file.dto.response.FileConvertResponse;
+
+import com.toyboyz.fileconversion.api.history.entity.History;
+import com.toyboyz.fileconversion.api.history.repository.HistoryRepository;
 import com.toyboyz.fileconversion.debezium.entity.OutboxEventType;
 import com.toyboyz.fileconversion.debezium.entity.OutboxEvent;
 import com.toyboyz.fileconversion.debezium.repository.OutboxEventRepository;
