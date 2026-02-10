@@ -42,7 +42,6 @@ public class FileConvertService {
         String payloadJson = toJson(Map.of(
                 "historyId", saved.getHistoryId(),
                 "uuid", saved.getUuid(),
-                "fileName", saved.getFileName(),
                 "originalFile", saved.getOriginalFile(),
                 "targetFormat", req.getTargetFormat()
         ));
@@ -70,8 +69,6 @@ public class FileConvertService {
         try {
             return objectMapper.writeValueAsString(obj);
         } catch (JsonProcessingException e) {
-            // 여기서 런타임 예외로 터뜨려야 트랜잭션 롤백이 되어
-            // History만 저장되고 Outbox가 누락되는 불상사를 막을 수 있음
             throw new IllegalStateException("Failed to serialize outbox payload", e);
         }
     }
