@@ -197,71 +197,127 @@
         });
     }
 
-document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+// 5. 업로드 + 완료 처리 (Presigned URL 방식)
+  document.getElementById('uploadForm').addEventListener('submit', async function(e) {
     e.preventDefault();
+
     const btn = document.getElementById('submitBtn');
-    const formData = new FormData(this);
-    formData.append('uuid', myUuid);
+
+    const fileInput = document.getElementById('fileInput');
+    const files = Array.from(fileInput.files);
+    const targetFormat = document.querySelector('select[name="targetFormat"]').value;
+
+    if (files.length === 0 || !targetFormat) return;
 
     btn.disabled = true;
-    btn.innerText = "업로드 중...";
+    btn.innerText = "URL 발급 중...";
 
     try {
-        const response = await fetch('/file/upload', { method: 'POST', body: formData });
+      // 1) upload-init (파일 자체는 서버로 안 보냄)
+      const initReq = {
+        uuid: myUuid,
+        targetFormat: targetFormat,
+        files: files.map(f => ({
+          filename: f.name,
+          contentType: f.type || "application/octet-stream",
+          size: f.size
+        }))
+      };
 
-        if (response.ok) {
-            const text = await response.text();
-            if (!text) {
-                location.reload();
-                return;
-            }
-            const newHistories = JSON.parse(text);
+      const initRes = await fetch('/file/upload-init', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(initReq)
+      });
 
-            const emptyRow = document.getElementById('empty-row');
-            if (emptyRow) emptyRow.remove();
+      if (!initRes.ok) throw new Error("upload-init 실패");
+      const initData = await initRes.json(); // { items: [{historyId,s3Key,uploadUrl}, ...] }
 
-            const tbody = document.getElementById('status-tbody');
+      // 2) S3 PUT 업로드
+      btn.innerText = "S3 업로드 중...";
 
-            newHistories.forEach(history => {
-                const row = document.createElement('tr');
-                row.className = 'history-row update-highlight';
-                row.setAttribute('data-id', history.historyId);
+      // 순서 매핑 가정: initData.items[i] <-> files[i]
+      for (let i = 0; i < initData.items.length; i++) {
+        const item = initData.items[i];
+        const f = files[i];
 
-                // [수정] 상태값 판별 로직 (문자열/숫자 모두 대응)
-                let statusText = "대기 중";
-                let badgeClass = "bg-secondary";
+        const putRes = await fetch(item.uploadUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': f.type || "application/octet-stream" },
+          body: f
+        });
 
-                if (history.status == '2') {
-                    statusText = "진행 중";
-                    badgeClass = "bg-primary";
-                } else if (history.status == '3') {
-                    statusText = "완료";
-                    badgeClass = "bg-success";
-                }
+        if (!putRes.ok) throw new Error(`S3 업로드 실패: ${f.name}`);
+      }
 
-                row.innerHTML = `
-                    <td class="text-truncate" style="max-width: 200px;">${history.originalFile}</td>
-                    <td class="status-cell text-center">
-                        <span class="badge ${badgeClass}">${statusText}</span>
-                    </td>
-                    <td class="message-cell small text-secondary">${history.message || '-'}</td>
-                `;
-                tbody.prepend(row);
-            });
+      // 3) upload-complete
+      btn.innerText = "서버 처리 중...";
 
-            this.reset();
-            document.getElementById('fileList').innerHTML = '<li class="list-group-item text-muted text-center border-0" style="background:transparent">파일을 선택하세요</li>';
+      const completeRes = await fetch('/file/upload-complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uuid: myUuid,
+          historyIds: initData.items.map(x => x.historyId)
+        })
+      });
 
-            btn.disabled = false;
-            btn.innerText = "변환 시작";
+      if (!completeRes.ok) throw new Error("upload-complete 실패");
+
+      // 기존 스타일 유지
+      const text = await completeRes.text();
+      if (!text) {
+        location.reload();
+        return;
+      }
+      const newHistories = JSON.parse(text);
+
+      const emptyRow = document.getElementById('empty-row');
+      if (emptyRow) emptyRow.remove();
+
+      const tbody = document.getElementById('status-tbody');
+
+      newHistories.forEach(history => {
+        const row = document.createElement('tr');
+        row.className = 'history-row update-highlight';
+        row.setAttribute('data-id', history.historyId);
+
+        let statusText = "대기 중";
+        let badgeClass = "bg-secondary";
+
+        if (history.status == '2') {
+          statusText = "진행 중";
+          badgeClass = "bg-primary";
+        } else if (history.status == '3') {
+          statusText = "완료";
+          badgeClass = "bg-success";
         }
+
+        row.innerHTML = `
+          <td class="text-truncate" style="max-width: 200px;">${history.fileName || history.originalFile}</td>
+          <td class="status-cell text-center">
+            <span class="badge ${badgeClass}">${statusText}</span>
+          </td>
+          <td class="message-cell small text-secondary">${history.message || '-'}</td>
+        `;
+        tbody.prepend(row);
+      });
+
+      this.reset();
+      document.getElementById('fileList').innerHTML =
+        '<li class="list-group-item text-muted text-center border-0" style="background:transparent">파일을 선택하세요</li>';
+
+      btn.disabled = false;
+      btn.innerText = "변환 시작";
+
     } catch (err) {
-        console.error("❌ 업로드 실패:", err);
-        btn.disabled = false;
-        btn.innerText = "변환 시작";
-        alert("업로드 처리 중 오류가 발생했습니다.");
+      console.error("❌ 업로드 실패:", err);
+      btn.disabled = false;
+      btn.innerText = "변환 시작";
+      alert("업로드 처리 중 오류가 발생했습니다.");
     }
-});
+  });
+
 
 // [필수 추가] 실시간 상태 업데이트 함수도 동일하게 수정해야 숫자가 한글로 바뀝니다.
 function updateStatusUI(data) {

@@ -28,14 +28,14 @@ public class History extends BaseTime {
     private String requestFormat;
 
     //원본 파일 경로
-    @Column(name = "original_file",length = 512)
+    @Column(name = "original_file",length = 1024)
     private String originalFile;
     //원본 파일 포맷
     @Column(name = "original_format",length = 10)
     private String originalFormat;
 
     //변환 파일 경로
-    @Column(name = "converted_file",length = 512)
+    @Column(name = "converted_file",length = 1024)
     private String convertedFile;
     //변환 후 포먓
     @Column(name = "converted_format",length = 10)

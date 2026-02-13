@@ -11,7 +11,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Getter
 @Builder
-@Table(name="outbox_event")
+@Entity(name="outbox_event")
 public class OutboxEvent extends BaseTime {
 
     @Id
@@ -27,7 +27,7 @@ public class OutboxEvent extends BaseTime {
     private String aggregateType;
 
     @Column(name = "aggregate_id", nullable = false, length = 100)
-    private String aggregateId; // 예: historyId, alertId
+    private Long aggregateId; // ex) historyId, alertId
 
     // 발생한 사건
     // ex) FileConvertRequested, AlertRequired 등등
@@ -40,8 +40,33 @@ public class OutboxEvent extends BaseTime {
     private String payload; // JSON 문자열
 
     // 기본 값
-    @PrePersist
-    void prePersist() {
-        if (this.uuid == null) this.uuid = UUID.randomUUID().toString();
+//    @PrePersist
+//    void prePersist() {
+//        if (this.uuid == null) this.uuid = UUID.randomUUID().toString();
+//    }
+
+    private OutboxEvent(String aggregateType,
+                        Long aggregateId,
+                        String eventType,
+                        String payload) {
+
+        this.uuid = UUID.randomUUID().toString();
+        this.aggregateType = aggregateType;
+        this.aggregateId = aggregateId;
+        this.eventType = eventType;
+        this.payload = payload;
+    }
+
+    public static OutboxEvent of(String aggregateType,
+                                 Long aggregateId,
+                                 String eventType,
+                                 String payload) {
+
+        return new OutboxEvent(
+                aggregateType,
+                aggregateId,
+                eventType,
+                payload
+        );
     }
 }
