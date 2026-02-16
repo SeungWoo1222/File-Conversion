@@ -4,14 +4,14 @@
   ],
   "users": [
     {
-      "name": "guest",
-      "password": "guest",
+      "name": "toyboyz",
+      "password": "toyboyz",
       "tags": "administrator"
     }
   ],
   "permissions": [
     {
-      "user": "guest",
+      "user": "toyboyz",
       "vhost": "/",
       "configure": ".*",
       "write": ".*",
@@ -44,7 +44,7 @@
       "vhost": "/",
       "destination": "outbox.queue",
       "destination_type": "queue",
-      "routing_key": "#",
+      "routing_key": "outbox.event.#",
       "arguments": {}
     }
   ]

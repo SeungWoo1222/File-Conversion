@@ -15,29 +15,58 @@ import java.util.UUID;
 public class OutboxEvent extends BaseTime {
 
     @Id
-    @Column(length = 36)
-    private String id;  // UUID 문자열
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    // 도메인 분류(차후 확장 가능성)
-    // ex) file, thumbnail, metadata
+    @Column(length = 36, nullable = false, updatable = false, unique = true)
+    private String uuid; // 이벤트 식별용 uuid
+
+    // 도메인 분류
+    // ex) file, alert
     @Column(name = "aggregate_type", nullable = false, length = 50)
     private String aggregateType;
 
     @Column(name = "aggregate_id", nullable = false, length = 100)
-    private String aggregateId; // 예: historyId or uuid
+    private Long aggregateId; // ex) historyId, alertId
 
-    // 발생한 사건 (차후 확장 가능성)
+    // 발생한 사건
     // ex) FileConvertRequested, AlertRequired 등등
     @Column(name = "event_type", nullable = false, length = 100)
     private String eventType;
 
+    // MQ에 제공할 History 메타 데이터
     @Lob
     @Column(name = "payload", nullable = false, columnDefinition = "TEXT")
     private String payload; // JSON 문자열
 
     // 기본 값
-    @PrePersist
-    void prePersist() {
-        if (this.id == null) this.id = UUID.randomUUID().toString();
+//    @PrePersist
+//    void prePersist() {
+//        if (this.uuid == null) this.uuid = UUID.randomUUID().toString();
+//    }
+
+    private OutboxEvent(String aggregateType,
+                        Long aggregateId,
+                        String eventType,
+                        String payload) {
+
+        this.uuid = UUID.randomUUID().toString();
+        this.aggregateType = aggregateType;
+        this.aggregateId = aggregateId;
+        this.eventType = eventType;
+        this.payload = payload;
+    }
+
+    public static OutboxEvent of(String aggregateType,
+                                 Long aggregateId,
+                                 String eventType,
+                                 String payload) {
+
+        return new OutboxEvent(
+                aggregateType,
+                aggregateId,
+                eventType,
+                payload
+        );
     }
 }
