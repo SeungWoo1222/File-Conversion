@@ -1,4 +1,4 @@
-package com.toyboyz.fileconversion.api.file.service;
+package com.toyboyz.fileconversion.s3.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;

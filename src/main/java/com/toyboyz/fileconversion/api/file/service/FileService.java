@@ -5,11 +5,11 @@ import com.toyboyz.fileconversion.api.file.dto.request.UploadInitRequest;
 import com.toyboyz.fileconversion.api.file.dto.response.UploadInitResponse;
 import com.toyboyz.fileconversion.api.history.entity.History;
 import com.toyboyz.fileconversion.api.history.service.HistoryService;
+import com.toyboyz.fileconversion.s3.service.S3StorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Objects;

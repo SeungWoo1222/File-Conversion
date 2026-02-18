@@ -3,22 +3,14 @@ package com.toyboyz.fileconversion.api.history.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.toyboyz.fileconversion.api.file.dto.request.UploadInitRequest;
-import com.toyboyz.fileconversion.api.history.dto.HistoryDTO;
 import com.toyboyz.fileconversion.api.history.entity.History;
 import com.toyboyz.fileconversion.api.history.repository.HistoryRepository;
-import com.toyboyz.fileconversion.api.sse.config.SseEmitterRegistry;
-import com.toyboyz.fileconversion.api.sse.service.SseService;
 import com.toyboyz.fileconversion.debezium.entity.OutboxEvent;
 import com.toyboyz.fileconversion.debezium.repository.OutboxEventRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
 
 import java.util.*;
 
