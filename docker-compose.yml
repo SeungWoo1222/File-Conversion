@@ -23,12 +23,11 @@ services:
     image: mysql:8.0
     container_name: mysql
     ports:
-      - "3307:3306"
+      - "3306:3306"
     environment:
-      MYSQL_ALLOW_EMPTY_PASSWORD: "true"
       MYSQL_DATABASE: api
-      MYSQL_USER: app
-      MYSQL_PASSWORD: apppw123!
+      MYSQL_USER: toyboyz
+      MYSQL_PASSWORD: toytoy123
     command:
       - "--server-id=223344"
       - "--log-bin=mysql-bin"
