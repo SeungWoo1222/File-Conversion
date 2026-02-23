@@ -12,8 +12,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 @Service
@@ -26,6 +28,8 @@ public class FileService {
 
     @Value("${app.s3.prefix:uploads}")
     private String prefix;
+
+    private static final Pattern SAFE_EXT = Pattern.compile("^[a-z0-9]{1,10}$");
 
     /** 1) upload-init: history 생성 + presigned url 반환 */
     public UploadInitResponse uploadInit(UploadInitRequest req) {
@@ -71,35 +75,34 @@ public class FileService {
 
         // 2) DB 상태 변경 + outbox 생성은 HistoryService에게 위임
         historyService.markUploadedAndCreateConvertOutbox(histories);
-
         return historyService.findAllByUuid(req.uuid());
     }
 
-
-    //히스토리 저장
-//    public List<History> sendToS3(List<MultipartFile> files,
-//                                  String format,
-//                                  String uuid) {
-//        //s3 에 파일 전송 메서드
-//        for (MultipartFile file : files) {
-//            String originalFilename = (file.getOriginalFilename() == null ? "file" : file.getOriginalFilename());
-//
-//            String originalFormat = extractExtension(originalFilename); // pdf, jpg ...
-//            String s3Key = S3StorageService.upload(file, "uploads/" + uuid);
-//
-//        }
-//
-//        //파일변환 요청기록 저장
-//        return historyService.saveHistory(files,format,uuid, s3Key);
-//    }
-
-
     private String buildS3Key(String uuid, String filename) {
-        String safe = sanitizeFilename(filename);
-        return prefix + "/" + uuid + "/" + UUID.randomUUID() + "-" + safe;
+        String ext = extractSafeExtension(filename); // ".pdf" or ""
+        return prefix + "/" + uuid + "/" + UUID.randomUUID() + ext;
     }
 
-    private String sanitizeFilename(String filename) {
-        return filename.replaceAll("[\\\\/\\r\\n\\t]", "_");
+    /**
+     * filename에서 확장자만 추출해서 ".ext" 형태로 반환.
+     * - 확장자가 영문/숫자만 아니면(한글, 공백, 특수문자 등) 확장자 제거
+     */
+    private String extractSafeExtension(String filename) {
+        if (filename == null || filename.isBlank()) return "";
+
+        // 혹시 경로가 들어오는 경우 대비해서 마지막 파일명만 사용
+        String base = filename;
+        int slash = Math.max(base.lastIndexOf('/'), base.lastIndexOf('\\'));
+        if (slash >= 0) base = base.substring(slash + 1);
+
+        int dot = base.lastIndexOf('.');
+        if (dot <= 0 || dot == base.length() - 1) return ""; // 확장자 없음 or ".hidden" or 끝이 점
+
+        String ext = base.substring(dot + 1).toLowerCase(Locale.ROOT);
+
+        // 안전한 확장자만 허용 (영문/숫자)
+        if (!SAFE_EXT.matcher(ext).matches()) return "";
+
+        return "." + ext;
     }
 }
