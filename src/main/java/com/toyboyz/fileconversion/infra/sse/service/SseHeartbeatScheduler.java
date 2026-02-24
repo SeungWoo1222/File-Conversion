@@ -1,6 +1,6 @@
-package com.toyboyz.fileconversion.api.sse.service;
+package com.toyboyz.fileconversion.infra.sse.service;
 
-import com.toyboyz.fileconversion.api.sse.config.SseEmitterRegistry;
+import com.toyboyz.fileconversion.infra.sse.config.SseEmitterRegistry;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;

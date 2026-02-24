@@ -1,21 +1,16 @@
-package com.toyboyz.fileconversion.api.sse.service;
+package com.toyboyz.fileconversion.infra.sse.service;
 
-import com.toyboyz.fileconversion.api.history.dto.HistoryDTO;
 import com.toyboyz.fileconversion.api.history.entity.History;
-import com.toyboyz.fileconversion.api.sse.config.SseEmitterRegistry;
+import com.toyboyz.fileconversion.infra.sse.config.SseEmitterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Service

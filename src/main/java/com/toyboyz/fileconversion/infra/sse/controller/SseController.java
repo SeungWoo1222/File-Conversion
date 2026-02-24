@@ -1,10 +1,8 @@
-package com.toyboyz.fileconversion.api.sse.controller;
+package com.toyboyz.fileconversion.infra.sse.controller;
 
-import com.toyboyz.fileconversion.api.history.dto.HistoryDTO;
-import com.toyboyz.fileconversion.api.history.entity.History;
 import com.toyboyz.fileconversion.api.history.service.HistoryService;
-import com.toyboyz.fileconversion.api.sse.config.SseEmitterRegistry;
-import com.toyboyz.fileconversion.api.sse.service.SseService;
+import com.toyboyz.fileconversion.infra.sse.config.SseEmitterRegistry;
+import com.toyboyz.fileconversion.infra.sse.service.SseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;

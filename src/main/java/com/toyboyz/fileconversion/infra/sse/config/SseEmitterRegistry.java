@@ -1,4 +1,4 @@
-package com.toyboyz.fileconversion.api.sse.config;
+package com.toyboyz.fileconversion.infra.sse.config;
 
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
