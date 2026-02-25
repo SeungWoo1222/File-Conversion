@@ -35,7 +35,7 @@ public class FileService {
     public UploadInitResponse uploadInit(UploadInitRequest req) {
         // 1) 서버가 key를 먼저 결정 (클라가 임의 key 제출 못하게)
         List<String> s3Keys = req.files().stream()
-                .map(f -> buildS3Key(req.uuid(), f.filename()))
+                .map(f -> buildS3Key(req.uuid()))
                 .toList();
 
         // 2) DB에 History 먼저 생성(원본 key 저장)
@@ -75,34 +75,34 @@ public class FileService {
 
         // 2) DB 상태 변경 + outbox 생성은 HistoryService에게 위임
         historyService.markUploadedAndCreateConvertOutbox(histories);
-        return historyService.findAllByUuid(req.uuid());
+        return historyService.findAllByUuidAndStatus(req.uuid());
     }
 
-    private String buildS3Key(String uuid, String filename) {
-        String ext = extractSafeExtension(filename); // ".pdf" or ""
-        return prefix + "/" + uuid + "/" + UUID.randomUUID() + ext;
+    private String buildS3Key(String uuid) {
+//        String ext = extractSafeExtension(filename); // ".pdf" or ""
+        return prefix + "/" + uuid + "/" + UUID.randomUUID();
     }
 
-    /**
-     * filename에서 확장자만 추출해서 ".ext" 형태로 반환.
-     * - 확장자가 영문/숫자만 아니면(한글, 공백, 특수문자 등) 확장자 제거
-     */
-    private String extractSafeExtension(String filename) {
-        if (filename == null || filename.isBlank()) return "";
-
-        // 혹시 경로가 들어오는 경우 대비해서 마지막 파일명만 사용
-        String base = filename;
-        int slash = Math.max(base.lastIndexOf('/'), base.lastIndexOf('\\'));
-        if (slash >= 0) base = base.substring(slash + 1);
-
-        int dot = base.lastIndexOf('.');
-        if (dot <= 0 || dot == base.length() - 1) return ""; // 확장자 없음 or ".hidden" or 끝이 점
-
-        String ext = base.substring(dot + 1).toLowerCase(Locale.ROOT);
-
-        // 안전한 확장자만 허용 (영문/숫자)
-        if (!SAFE_EXT.matcher(ext).matches()) return "";
-
-        return "." + ext;
-    }
+//    /**
+//     * filename에서 확장자만 추출해서 ".ext" 형태로 반환.
+//     * - 확장자가 영문/숫자만 아니면(한글, 공백, 특수문자 등) 확장자 제거
+//     */
+//    private String extractSafeExtension(String filename) {
+//        if (filename == null || filename.isBlank()) return "";
+//
+//        // 혹시 경로가 들어오는 경우 대비해서 마지막 파일명만 사용
+//        String base = filename;
+//        int slash = Math.max(base.lastIndexOf('/'), base.lastIndexOf('\\'));
+//        if (slash >= 0) base = base.substring(slash + 1);
+//
+//        int dot = base.lastIndexOf('.');
+//        if (dot <= 0 || dot == base.length() - 1) return ""; // 확장자 없음 or ".hidden" or 끝이 점
+//
+//        String ext = base.substring(dot + 1).toLowerCase(Locale.ROOT);
+//
+//        // 안전한 확장자만 허용 (영문/숫자)
+//        if (!SAFE_EXT.matcher(ext).matches()) return "";
+//
+//        return "." + ext;
+//    }
 }
