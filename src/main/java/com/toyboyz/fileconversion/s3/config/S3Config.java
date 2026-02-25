@@ -17,7 +17,6 @@ public class S3Config {
     //#1.추후 main 머지할 때 제거
     private final String profileName = "toyboyz-sso";
 
-
     @Bean
     public S3Client s3Client(@Value("${app.s3.region}") String region) {
         return S3Client.builder()

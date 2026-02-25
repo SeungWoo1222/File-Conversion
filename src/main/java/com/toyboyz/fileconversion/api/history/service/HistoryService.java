@@ -58,6 +58,11 @@ public class HistoryService {
         List<OutboxEvent> outboxList = new ArrayList<>();
 
         for (History h : histories) {
+            // 이미 처리된 것이면 skip
+            if (!"1".equals(h.getStatus())) {
+                continue;
+            }
+
             h.setStatus("2"); // 변환 진행 중
             eventPublisher.publishEvent(h);
 
@@ -71,8 +76,9 @@ public class HistoryService {
             outboxList.add(OutboxEvent.of("file", h.getHistoryId(), "fileConvert", toJson(payload)));
         }
 
-        historyRepository.saveAll(histories);
-        outboxEventRepository.saveAll(outboxList);
+            historyRepository.saveAll(histories);
+            outboxEventRepository.saveAll(outboxList);
+
     }
 
     //DTO 반환으로 리팩토링 대상
@@ -127,8 +133,8 @@ public class HistoryService {
     }
 
     @Transactional(readOnly = true)
-    public List<History> findAllByUuid(String uuid) {
-        return historyRepository.findAllByUuid(uuid);
+    public List<History> findAllByUuidAndStatus(String uuid) {
+        return historyRepository.findAllByUuidAndStatus(uuid, "2");
     }
 
     private String toJson(Object obj) {
