@@ -16,7 +16,7 @@ public class RedisConfig {
     // 1. 메시지 리스너 어댑터 설정 (어떤 클래스의 어떤 메서드를 쓸지 지정)
     @Bean
     MessageListenerAdapter messageListenerAdapter(RedisService sub) {
-        return new MessageListenerAdapter(sub, "handleMessage");
+        return new MessageListenerAdapter(sub, "subProg");
     }
 
 
