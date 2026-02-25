@@ -75,7 +75,7 @@ public class FileService {
 
         // 2) DB 상태 변경 + outbox 생성은 HistoryService에게 위임
         historyService.markUploadedAndCreateConvertOutbox(histories);
-        return historyService.findAllByUuidAndStatus(req.uuid());
+        return historyService.getByIds(req.historyIds());
     }
 
     private String buildS3Key(String uuid) {
