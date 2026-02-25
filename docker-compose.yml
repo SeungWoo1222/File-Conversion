@@ -59,7 +59,7 @@ services:
       SPRING_RABBITMQ_PASSWORD: toyboyz
       SPRING_RABBITMQ_VIRTUAL_HOST: /
 
-      SPRING_DATASOURCE_URL: jdbc:mysql://file-conversion-database-1.cn6kiey0qu1a.ap-northeast-2.rds.amazonaws.com:3306/rds?useSSL-false&serverTimezone=Asia/Seoul
+      SPRING_DATASOURCE_URL: jdbc:mysql://file-conversion-database-1.cn6kiey0qu1a.ap-northeast-2.rds.amazonaws.com:3306/api?useSSL-false&serverTimezone=Asia/Seoul
       SPRING_DATASOURCE_USERNAME: toyboyz
       SPRING_DATASOURCE_PASSWORD: toytoy123!
     healthcheck:
