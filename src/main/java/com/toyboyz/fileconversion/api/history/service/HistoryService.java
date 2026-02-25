@@ -127,8 +127,8 @@ public class HistoryService {
     }
 
     @Transactional(readOnly = true)
-    public List<History> findAllByUuid(String uuid) {
-        return historyRepository.findAllByUuid(uuid);
+    public List<History> findAllByUuidAndStatus(String uuid) {
+        return historyRepository.findAllByUuidAndStatus(uuid, "2");
     }
 
     private String toJson(Object obj) {
