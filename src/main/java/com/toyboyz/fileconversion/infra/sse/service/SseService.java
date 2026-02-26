@@ -1,6 +1,8 @@
 package com.toyboyz.fileconversion.infra.sse.service;
 
 import com.toyboyz.fileconversion.api.history.entity.History;
+import com.toyboyz.fileconversion.infra.redis.dto.SubDTO;
+import com.toyboyz.fileconversion.infra.redis.service.RedisService;
 import com.toyboyz.fileconversion.infra.sse.config.SseEmitterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,11 +22,12 @@ public class SseService {
     private final SseEmitterRegistry sseEmitterRegistry;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handleHistoryEvent(History history) {
+    public void handleHistoryEvent(History history) { //엔티티를 직접 주지말고 dto 에 담아서 주자
         notify(history);
     }
 
 
+    //rdb 갱신 시 실행
     //id 별 emitter 보관
     public void notify(History history) {
         String uuid = history.getUuid();
@@ -35,13 +38,12 @@ public class SseService {
             return;
         }
         try {
-            String statusMsg = getStatusMessage(history.getStatus());
             emitter.send(SseEmitter.event()
                     .name("history-update")
                     .data(Map.of(
                     "id", history.getHistoryId(),
                             "status",history.getStatus(),
-                            "message", statusMsg
+                            "message", history.getStatus()
                             )));
             log.info("Notify 메서드 실행됨! ID: {}, Status: {}", history.getHistoryId(), history.getStatus());
         } catch (IOException e) {
@@ -51,13 +53,23 @@ public class SseService {
         }
     }
 
-    private String getStatusMessage(String status) {
-        return switch (status) {
-            case "1" -> "기록 생성 완료";
-            case "2" -> "변환 중...";
-            case "3" -> "변환 완료";
-            default -> "상태 업데이트";
-        };
+
+    public void notifyRedis(SubDTO subDTO) {
+        String uuid = subDTO.getUuid();
+        SseEmitter emitter = sseEmitterRegistry.getEmitter(uuid);
+        if (emitter == null) return;
+        try {
+            emitter.send(SseEmitter.event()
+                    .name("redis-caching-update")
+                    .data(Map.of(
+                            "uuid", uuid,
+                            "filename", subDTO.getFilename(),
+                            "percent", subDTO.getPercent(),
+                            "status", subDTO.getStatus())));
+            log.info("sse 전송 완료");
+        } catch (IOException e) {
+            sseEmitterRegistry.removeEmitter(uuid); //[수정 예정] 변환 진행 중일 때 예외 처리의 경우 sse 가 끊어지면 안됨
+        }
     }
 }
 
