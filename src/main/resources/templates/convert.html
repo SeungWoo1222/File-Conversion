@@ -104,24 +104,43 @@
             <div class="card p-4">
                 <h5 class="fw-bold mb-3" style="color:#a5b4fc">실시간 변환 상태</h5>
                 <div class="table-responsive table-dark-custom">
-                    <table class="table mb-0">
+                    <table class="table mb-0" style="table-layout: fixed; width: 100%;">
                         <thead style="background: rgba(255,255,255,0.05)">
                         <tr>
-                            <th>파일명</th>
-                            <th class="text-center">상태</th>
-                            <th>메시지</th>
+                            <th style="width: 35%">파일명</th>
+                            <th class="text-center" style="width: 15%">상태</th>
+                            <th class="text-center" style="width: 25%">진행률</th>
+                            <th style="width: 25%">메시지</th>
                         </tr>
                         </thead>
                         <tbody id="status-tbody">
-                        <tr th:each="history : ${histories}" class="history-row" th:data-id="${history.historyId}">
-                            <td th:text="${history.originalFile}" class="text-truncate" style="max-width: 200px;">file.png</td>
+                        <tr th:each="history : ${histories}"
+                            class="history-row"
+                            th:data-id="${history.historyId}"
+                            th:data-filename="${history.uuid}">
+
+                            <td th:text="${history.originalFile}" class="text-truncate">파일명</td>
+
                             <td class="status-cell text-center">
-                                <span class="badge" th:classappend="${history.status == '3' ? 'bg-success' : 'bg-secondary'}" th:text="${history.status}">1</span>
+                                    <span class="badge"
+                                          th:classappend="${history.status == '3' ? 'bg-success' : (history.status == '2' ? 'bg-primary' : 'bg-secondary')}"
+                                          th:text="${history.status == '3' ? '완료' : (history.status == '2' ? '진행 중' : '대기 중')}">대기 중</span>
                             </td>
-                            <td class="message-cell small text-secondary">-</td>
+
+                            <td class="progress-cell" style="vertical-align: middle;">
+                                <div class="progress" style="height: 8px; background: rgba(255,255,255,0.1);">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-info"
+                                         role="progressbar"
+                                         th:style="'width: ' + ${history.percent ?: 0} + '%'"></div>
+                                </div>
+                                <small class="percent-text d-block text-center mt-1" style="font-size: 0.7rem;"
+                                       th:text="${(history.percent ?: 0) + '%'}">0%</small>
+                            </td>
+
+                            <td class="message-cell small text-secondary" th:text="${history.message ?: '-'}">-</td>
                         </tr>
                         <tr th:if="${#lists.isEmpty(histories)}" id="empty-row">
-                            <td colspan="3" class="text-center text-muted p-4">변환 내역이 없습니다.</td>
+                            <td colspan="4" class="text-center text-muted p-4">변환 내역이 없습니다.</td>
                         </tr>
                         </tbody>
                     </table>
@@ -149,7 +168,7 @@
         console.log("📍 SSE 연결 중... UUID:", uuid);
         const eventSource = new EventSource(`/api/sse/connect/${uuid}`);
 
-        eventSource.addEventListener('history-update', (event) => {
+        eventSource.addEventListener('redis-caching-update', (event) => {
             const data = JSON.parse(event.data);
             console.log("🔔 상태 업데이트 수신:", data);
             updateStatusUI(data);
@@ -159,27 +178,73 @@
         eventSource.onerror = () => eventSource.close();
     }
 
-    // 수신한 데이터를 기반으로 테이블의 특정 행을 찾아 변경
+    // 초기 실행
+    initSse(myUuid);
+
+    // 3. 수신한 데이터를 기반으로 테이블의 특정 행을 찾아 변경 (유일한 단일 함수)
     function updateStatusUI(data) {
-        const row = document.querySelector(`tr[data-id="${data.id || data.historyId}"]`);
+        // [중요] 내 세션 UUID가 아닌 경우 무시 (다른 사람의 알림 간섭 방지)
+        if (data.uuid !== myUuid) {
+            return;
+        }
+
+        // 서버의 파일 식별자(filename)를 기준으로 정확한 행 찾기
+        const row = document.querySelector(`tr[data-filename="${data.filename}"]`);
+
         if (row) {
+            console.log("✅ 매칭 성공:", data.filename);
+
             const statusCell = row.querySelector('.status-cell');
+            const progressBar = row.querySelector('.progress-bar');
+            const percentText = row.querySelector('.percent-text');
             const messageCell = row.querySelector('.message-cell');
 
-            let badgeClass = data.status === '3' ? 'bg-success' : (data.status === '2' ? 'bg-primary' : 'bg-secondary');
+            // 상태값 숫자("1", "2", "3") 또는 문자열에 따른 처리
+            let statusText = "대기 중";
+            let badgeClass = "bg-secondary";
 
-            statusCell.innerHTML = `<span class="badge ${badgeClass}">${statusText}</span>`;
-            messageCell.innerText = data.message;
+            if (data.status === "2" || (typeof data.status === 'string' && data.status.includes("업데이트"))) {
+                statusText = "진행 중";
+                badgeClass = "bg-primary";
+            } else if (data.status === "3" || (typeof data.status === 'string' && data.status.includes("완료"))) {
+                statusText = "완료";
+                badgeClass = "bg-success";
+            }
 
-            // 업데이트 효과
+            if (statusCell) {
+                statusCell.innerHTML = `<span class="badge ${badgeClass}">${statusText}</span>`;
+            }
+
+            // 진행률(percent) 실시간 반영
+            if (progressBar && data.percent !== undefined) {
+                const p = data.percent;
+                progressBar.style.setProperty('width', p + '%', 'important');
+
+                if (percentText) {
+                    percentText.innerText = p + "%";
+                }
+
+                if (p >= 100 || statusText === "완료") {
+                    progressBar.classList.remove('progress-bar-animated');
+                    progressBar.classList.replace('bg-info', 'bg-success'); // 완료 시 초록색으로 변경
+                }
+            }
+
+            // 메시지 업데이트
+            if (messageCell && statusText === "완료") {
+                messageCell.innerText = "변환 완료";
+            } else if (messageCell) {
+                messageCell.innerText = data.status === "2" ? "처리 중..." : "-";
+            }
+
             row.classList.add('update-highlight');
-            setTimeout(() => row.classList.remove('update-highlight'), 2000);
+            setTimeout(() => row.classList.remove('update-highlight'), 1000);
+        } else {
+            console.warn("❌ 매칭 실패: 화면에 해당 파일명 식별자를 가진 행이 없습니다 ->", data.filename);
         }
     }
 
-    initSse(myUuid);
-
-    // 3. 파일 업로드 로직 (기존 유지 + 파라미터 고정)
+    // 4. 파일 업로드 목록 업데이트 UI
     function updateFileList() {
         const input = document.getElementById('fileInput');
         const list = document.getElementById('fileList');
@@ -197,156 +262,132 @@
         });
     }
 
-// 5. 업로드 + 완료 처리 (Presigned URL 방식)
-  document.getElementById('uploadForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
+    // 5. 업로드 + 완료 처리 (Presigned URL 방식)
+    document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
 
-    const btn = document.getElementById('submitBtn');
+        const btn = document.getElementById('submitBtn');
+        const fileInput = document.getElementById('fileInput');
+        const files = Array.from(fileInput.files);
+        const targetFormat = document.querySelector('select[name="targetFormat"]').value;
 
-    const fileInput = document.getElementById('fileInput');
-    const files = Array.from(fileInput.files);
-    const targetFormat = document.querySelector('select[name="targetFormat"]').value;
+        if (files.length === 0 || !targetFormat) return;
 
-    if (files.length === 0 || !targetFormat) return;
+        btn.disabled = true;
+        btn.innerText = "URL 발급 중...";
 
-    btn.disabled = true;
-    btn.innerText = "URL 발급 중...";
+        try {
+            // 1) upload-init
+            const initReq = {
+                uuid: myUuid,
+                targetFormat: targetFormat,
+                files: files.map(f => ({
+                    filename: f.name,
+                    contentType: f.type || "application/octet-stream",
+                    size: f.size
+                }))
+            };
 
-    try {
-      // 1) upload-init (파일 자체는 서버로 안 보냄)
-      const initReq = {
-        uuid: myUuid,
-        targetFormat: targetFormat,
-        files: files.map(f => ({
-          filename: f.name,
-          contentType: f.type || "application/octet-stream",
-          size: f.size
-        }))
-      };
+            const initRes = await fetch('/file/upload-init', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(initReq)
+            });
 
-      const initRes = await fetch('/file/upload-init', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(initReq)
-      });
+            if (!initRes.ok) throw new Error("upload-init 실패");
+            const initData = await initRes.json();
 
-      if (!initRes.ok) throw new Error("upload-init 실패");
-      const initData = await initRes.json(); // { items: [{historyId,s3Key,uploadUrl}, ...] }
+            // 2) S3 PUT 업로드
+            btn.innerText = "S3 업로드 중...";
+            for (let i = 0; i < initData.items.length; i++) {
+                const item = initData.items[i];
+                const f = files[i];
 
-      // 2) S3 PUT 업로드
-      btn.innerText = "S3 업로드 중...";
+                const putRes = await fetch(item.uploadUrl, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': f.type || "application/octet-stream" },
+                    body: f
+                });
 
-      // 순서 매핑 가정: initData.items[i] <-> files[i]
-      for (let i = 0; i < initData.items.length; i++) {
-        const item = initData.items[i];
-        const f = files[i];
+                if (!putRes.ok) throw new Error(`S3 업로드 실패: ${f.name}`);
+            }
 
-        const putRes = await fetch(item.uploadUrl, {
-          method: 'PUT',
-          headers: { 'Content-Type': f.type || "application/octet-stream" },
-          body: f
-        });
+            // 3) upload-complete
+            btn.innerText = "서버 처리 중...";
 
-        if (!putRes.ok) throw new Error(`S3 업로드 실패: ${f.name}`);
-      }
+            const completeRes = await fetch('/file/upload-complete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    uuid: myUuid,
+                    historyIds: initData.items.map(x => x.historyId)
+                })
+            });
 
-      // 3) upload-complete
-      btn.innerText = "서버 처리 중...";
+            if (!completeRes.ok) throw new Error("upload-complete 실패");
 
-      const completeRes = await fetch('/file/upload-complete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          uuid: myUuid,
-          historyIds: initData.items.map(x => x.historyId)
-        })
-      });
+            const text = await completeRes.text();
+            if (!text) {
+                location.reload();
+                return;
+            }
+            const newHistories = JSON.parse(text);
 
-      if (!completeRes.ok) throw new Error("upload-complete 실패");
+            const emptyRow = document.getElementById('empty-row');
+            if (emptyRow) emptyRow.remove();
 
-      // 기존 스타일 유지
-      const text = await completeRes.text();
-      if (!text) {
-        location.reload();
-        return;
-      }
-      const newHistories = JSON.parse(text);
+            const tbody = document.getElementById('status-tbody');
 
-      const emptyRow = document.getElementById('empty-row');
-      if (emptyRow) emptyRow.remove();
+            newHistories.forEach(history => {
+                const row = document.createElement('tr');
+                row.className = 'history-row update-highlight';
+                row.setAttribute('data-id', history.historyId);
+                // 중요: 새로 추가된 행도 매칭될 수 있도록 data-filename 속성을 심어줌
+                row.setAttribute('data-filename', history.uuid);
 
-      const tbody = document.getElementById('status-tbody');
+                let statusText = "대기 중";
+                let badgeClass = "bg-secondary";
 
-      newHistories.forEach(history => {
-        const row = document.createElement('tr');
-        row.className = 'history-row update-highlight';
-        row.setAttribute('data-id', history.historyId);
+                if (history.status == '2') {
+                    statusText = "진행 중";
+                    badgeClass = "bg-primary";
+                } else if (history.status == '3') {
+                    statusText = "완료";
+                    badgeClass = "bg-success";
+                }
 
-        let statusText = "대기 중";
-        let badgeClass = "bg-secondary";
+                row.innerHTML = `
+                    <td class="text-truncate" style="max-width: 150px;">${history.fileName || history.originalFile}</td>
+                    <td class="status-cell text-center">
+                        <span class="badge ${badgeClass}">${statusText}</span>
+                    </td>
+                    <td class="progress-cell" style="vertical-align: middle;">
+                        <div class="progress" style="height: 8px; background: rgba(255,255,255,0.1);">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-info"
+                                 role="progressbar" style="width: 0%"></div>
+                        </div>
+                        <small class="percent-text d-block text-center mt-1" style="font-size: 0.7rem;">0%</small>
+                    </td>
+                    <td class="message-cell small text-secondary">${history.message || '-'}</td>
+                `;
+                tbody.prepend(row);
+            });
 
-        if (history.status == '2') {
-          statusText = "진행 중";
-          badgeClass = "bg-primary";
-        } else if (history.status == '3') {
-          statusText = "완료";
-          badgeClass = "bg-success";
+            this.reset();
+            document.getElementById('fileList').innerHTML =
+                '<li class="list-group-item text-muted text-center border-0" style="background:transparent">파일을 선택하세요</li>';
+
+            btn.disabled = false;
+            btn.innerText = "변환 시작";
+
+        } catch (err) {
+            console.error("❌ 업로드 실패:", err);
+            btn.disabled = false;
+            btn.innerText = "변환 시작";
+            alert("업로드 처리 중 오류가 발생했습니다.");
         }
+    });
 
-        row.innerHTML = `
-          <td class="text-truncate" style="max-width: 200px;">${history.fileName || history.originalFile}</td>
-          <td class="status-cell text-center">
-            <span class="badge ${badgeClass}">${statusText}</span>
-          </td>
-          <td class="message-cell small text-secondary">${history.message || '-'}</td>
-        `;
-        tbody.prepend(row);
-      });
-
-      this.reset();
-      document.getElementById('fileList').innerHTML =
-        '<li class="list-group-item text-muted text-center border-0" style="background:transparent">파일을 선택하세요</li>';
-
-      btn.disabled = false;
-      btn.innerText = "변환 시작";
-
-    } catch (err) {
-      console.error("❌ 업로드 실패:", err);
-      btn.disabled = false;
-      btn.innerText = "변환 시작";
-      alert("업로드 처리 중 오류가 발생했습니다.");
-    }
-  });
-
-
-// [필수 추가] 실시간 상태 업데이트 함수도 동일하게 수정해야 숫자가 한글로 바뀝니다.
-function updateStatusUI(data) {
-    // data.id 또는 data.historyId 등 서버에서 내려주는 키값 확인 필요
-    const row = document.querySelector(`tr[data-id="${data.id || data.historyId}"]`);
-    if (row) {
-        const statusCell = row.querySelector('.status-cell');
-        const messageCell = row.querySelector('.message-cell');
-
-        // [수정] 실시간 데이터에 대한 상태 판별
-        let statusText = "대기 중";
-        let badgeClass = "bg-secondary";
-
-        if (data.status == '2') {
-            statusText = "진행 중";
-            badgeClass = "bg-primary";
-        } else if (data.status == '3') {
-            statusText = "완료";
-            badgeClass = "bg-success";
-        }
-
-        statusCell.innerHTML = `<span class="badge ${badgeClass}">${statusText}</span>`;
-        messageCell.innerText = data.message;
-
-        // 시각적 피드백 효과
-        row.classList.add('update-highlight');
-        setTimeout(() => row.classList.remove('update-highlight'), 2000);
-    }
-}
 </script>
 </body>
 </html>
