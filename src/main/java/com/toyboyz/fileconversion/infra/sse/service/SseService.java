@@ -66,7 +66,6 @@ public class SseService {
                             "filename", subDTO.getFilename(),
                             "percent", subDTO.getPercent(),
                             "status", subDTO.getStatus())));
-
             log.info("sse 전송 완료");
         } catch (IOException e) {
             sseEmitterRegistry.removeEmitter(uuid); //[수정 예정] 변환 진행 중일 때 예외 처리의 경우 sse 가 끊어지면 안됨

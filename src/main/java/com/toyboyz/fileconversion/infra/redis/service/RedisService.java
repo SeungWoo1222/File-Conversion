@@ -22,8 +22,8 @@ public class RedisService {
         SubDTO subDTO;
         try {
             subDTO = om.readValue(message,SubDTO.class);
-            System.out.println("상태 : "+subDTO.getStatus());
-            System.out.println(subDTO.getFilename());
+            log.info("상태 : "+subDTO.getStatus());
+            log.info(subDTO.getFilename());
             sseService.notifyRedis(subDTO);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);

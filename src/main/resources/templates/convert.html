@@ -110,14 +110,14 @@
                             <th style="width: 35%">파일명</th>
                             <th class="text-center" style="width: 15%">상태</th>
                             <th class="text-center" style="width: 25%">진행률</th>
-                            <th style="width: 25%">메시지</th>
+                            <th style="width: 25%">다운로드</th>
                         </tr>
                         </thead>
                         <tbody id="status-tbody">
                         <tr th:each="history : ${histories}"
                             class="history-row"
                             th:data-id="${history.historyId}"
-                            th:data-filename="${history.uuid}">
+                            th:data-s3-filename="${history.s3FileName}">
 
                             <td th:text="${history.originalFile}" class="text-truncate">파일명</td>
 
@@ -181,25 +181,24 @@
     // 초기 실행
     initSse(myUuid);
 
-    // 3. 수신한 데이터를 기반으로 테이블의 특정 행을 찾아 변경 (유일한 단일 함수)
-    function updateStatusUI(data) {
-        // [중요] 내 세션 UUID가 아닌 경우 무시 (다른 사람의 알림 간섭 방지)
+    // 3. 수신한 데이터를 기반으로 테이블의 특정 행을 찾아 변경
+function updateStatusUI(data) {
         if (data.uuid !== myUuid) {
             return;
         }
 
-        // 서버의 파일 식별자(filename)를 기준으로 정확한 행 찾기
-        const row = document.querySelector(`tr[data-filename="${data.filename}"]`);
+        // 🌟 [수정된 부분] HTML 속성은 s3-filename이지만, SSE 데이터는 filename 필드에 값이 있습니다!
+        const fileId = data.filename || data.s3FileName;
+        const row = document.querySelector(`tr[data-s3-filename="${fileId}"]`);
 
         if (row) {
-            console.log("✅ 매칭 성공:", data.filename);
+            console.log("✅ 매칭 성공:", fileId);
 
             const statusCell = row.querySelector('.status-cell');
             const progressBar = row.querySelector('.progress-bar');
             const percentText = row.querySelector('.percent-text');
             const messageCell = row.querySelector('.message-cell');
 
-            // 상태값 숫자("1", "2", "3") 또는 문자열에 따른 처리
             let statusText = "대기 중";
             let badgeClass = "bg-secondary";
 
@@ -215,7 +214,6 @@
                 statusCell.innerHTML = `<span class="badge ${badgeClass}">${statusText}</span>`;
             }
 
-            // 진행률(percent) 실시간 반영
             if (progressBar && data.percent !== undefined) {
                 const p = data.percent;
                 progressBar.style.setProperty('width', p + '%', 'important');
@@ -226,11 +224,10 @@
 
                 if (p >= 100 || statusText === "완료") {
                     progressBar.classList.remove('progress-bar-animated');
-                    progressBar.classList.replace('bg-info', 'bg-success'); // 완료 시 초록색으로 변경
+                    progressBar.classList.replace('bg-info', 'bg-success');
                 }
             }
 
-            // 메시지 업데이트
             if (messageCell && statusText === "완료") {
                 messageCell.innerText = "변환 완료";
             } else if (messageCell) {
@@ -240,7 +237,7 @@
             row.classList.add('update-highlight');
             setTimeout(() => row.classList.remove('update-highlight'), 1000);
         } else {
-            console.warn("❌ 매칭 실패: 화면에 해당 파일명 식별자를 가진 행이 없습니다 ->", data.filename);
+            console.warn("❌ 매칭 실패: 화면에 해당 s3FileName 식별자를 가진 행이 없습니다 ->", fileId);
         }
     }
 
@@ -342,8 +339,8 @@
                 const row = document.createElement('tr');
                 row.className = 'history-row update-highlight';
                 row.setAttribute('data-id', history.historyId);
-                // 중요: 새로 추가된 행도 매칭될 수 있도록 data-filename 속성을 심어줌
-                row.setAttribute('data-filename', history.uuid);
+                // 중요: 새로 추가된 행도 매칭될 수 있도록 data-s3-filename 속성을 심어줌
+                row.setAttribute('data-s3-filename', history.s3FileName);
 
                 let statusText = "대기 중";
                 let badgeClass = "bg-secondary";
