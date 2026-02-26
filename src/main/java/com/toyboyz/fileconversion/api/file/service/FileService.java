@@ -11,10 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
@@ -33,18 +30,27 @@ public class FileService {
 
     /** 1) upload-init: history 생성 + presigned url 반환 */
     public UploadInitResponse uploadInit(UploadInitRequest req) {
+        // 파일 개수만큼 "S3에 쓸 UUID"를 먼저 만든다
+        List<String> s3FileNames = req.files().stream()
+                .map(f -> UUID.randomUUID().toString())
+                .toList();
+
         // 1) 서버가 key를 먼저 결정 (클라가 임의 key 제출 못하게)
-        List<String> s3Keys = req.files().stream()
-                .map(f -> buildS3Key(req.uuid()))
+        List<String> s3Keys = s3FileNames.stream()
+                .map(id -> buildS3Key(req.uuid(), id))
                 .toList();
 
         // 2) DB에 History 먼저 생성(원본 key 저장)
-        List<History> histories = historyService.createPendingHistories(req, s3Keys);
+        List<History> histories = historyService.createPendingHistories(req, s3Keys, s3FileNames);
 
         // 3) presigned url 발급해서 내려줌 (historyId/key/url 매핑)
+        Map<String, History> byKey = histories.stream()
+                .collect(java.util.stream.Collectors.toMap(History::getOriginalFile, h -> h));
+
         List<UploadInitResponse.Item> items = IntStream.range(0, histories.size())
                 .mapToObj(i -> {
-                    History h = histories.get(i);
+                    String key = s3Keys.get(i);
+                    History h = byKey.get(key);
                     UploadInitRequest.FileMeta meta = req.files().get(i);
 
                     String contentType = (meta.contentType() == null || meta.contentType().isBlank())
@@ -78,31 +84,8 @@ public class FileService {
         return historyService.getByIds(req.historyIds());
     }
 
-    private String buildS3Key(String uuid) {
-//        String ext = extractSafeExtension(filename); // ".pdf" or ""
-        return prefix + "/" + uuid + "/" + UUID.randomUUID();
+    private String buildS3Key(String uuid, String s3FileName) {
+        return prefix + "/" + uuid + "/" + s3FileName;
     }
 
-//    /**
-//     * filename에서 확장자만 추출해서 ".ext" 형태로 반환.
-//     * - 확장자가 영문/숫자만 아니면(한글, 공백, 특수문자 등) 확장자 제거
-//     */
-//    private String extractSafeExtension(String filename) {
-//        if (filename == null || filename.isBlank()) return "";
-//
-//        // 혹시 경로가 들어오는 경우 대비해서 마지막 파일명만 사용
-//        String base = filename;
-//        int slash = Math.max(base.lastIndexOf('/'), base.lastIndexOf('\\'));
-//        if (slash >= 0) base = base.substring(slash + 1);
-//
-//        int dot = base.lastIndexOf('.');
-//        if (dot <= 0 || dot == base.length() - 1) return ""; // 확장자 없음 or ".hidden" or 끝이 점
-//
-//        String ext = base.substring(dot + 1).toLowerCase(Locale.ROOT);
-//
-//        // 안전한 확장자만 허용 (영문/숫자)
-//        if (!SAFE_EXT.matcher(ext).matches()) return "";
-//
-//        return "." + ext;
-//    }
 }

@@ -19,9 +19,13 @@ public class History extends BaseTime {
 
     private String uuid;
 
-    //파일명
+    // 원본 파일명
     @Column(name = "file_name")
     private String fileName;
+
+    // s3에 저장된 파일명
+    @Column(name = "s3_file_name")
+    private String s3FileName;
 
     //사용자가 요청한 포맷
     @Column(name = "request_format", length = 10)

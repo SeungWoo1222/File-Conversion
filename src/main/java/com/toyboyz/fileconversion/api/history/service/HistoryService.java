@@ -8,6 +8,7 @@ import com.toyboyz.fileconversion.api.history.repository.HistoryRepository;
 import com.toyboyz.fileconversion.debezium.entity.OutboxEvent;
 import com.toyboyz.fileconversion.debezium.repository.OutboxEventRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +17,7 @@ import java.util.*;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class HistoryService {
 
     private final HistoryRepository historyRepository;
@@ -25,9 +27,9 @@ public class HistoryService {
 
     /** upload-init 단계: status=1, originalFile=S3 key 저장 */
     @Transactional
-    public List<History> createPendingHistories(UploadInitRequest req, List<String> s3Keys) {
-        if (req.files().size() != s3Keys.size()) {
-            throw new IllegalArgumentException("files size != s3Keys size");
+    public List<History> createPendingHistories(UploadInitRequest req, List<String> s3Keys, List<String> s3FileNames) {
+        if (req.files().size() != s3Keys.size() || req.files().size() != s3FileNames.size()) {
+            throw new IllegalArgumentException("file size mismatch");
         }
 
         List<History> saveList = new ArrayList<>();
@@ -40,6 +42,7 @@ public class HistoryService {
                     .uuid(req.uuid())
                     .fileName(f.filename())
                     .requestFormat(req.targetFormat())
+                    .s3FileName(s3FileNames.get(i))
                     .originalFile(s3Keys.get(i))
                     .originalFormat(ext)
                     .status("1")                 // 대기/업로드 준비
@@ -72,6 +75,7 @@ public class HistoryService {
             payload.put("s3Key", h.getOriginalFile());
             payload.put("originalFormat", h.getOriginalFormat());
             payload.put("requestFormat", h.getRequestFormat());
+            payload.put("fileName", h.getS3FileName());
 
             outboxList.add(OutboxEvent.of("file", h.getHistoryId(), "fileConvert", toJson(payload)));
         }
@@ -80,39 +84,6 @@ public class HistoryService {
             outboxEventRepository.saveAll(outboxList);
 
     }
-
-    //DTO 반환으로 리팩토링 대상
-//    @Transactional
-//    public List<History> saveHistory(List<MultipartFile> fileList,String format,String uuid) {
-//        ArrayList<History> saveList = new ArrayList<>();
-//        for (MultipartFile file : fileList) {
-//            History history = History.builder()
-//                    .fileName(file.getName())
-//                    .originalFile(file.getOriginalFilename())
-//                    .requestFormat(format)
-//                    .uuid(uuid)
-//                    .status("1")
-//                    .build();
-//            saveList.add(history);
-//        }
-//        List<History> hisList = historyRepository.saveAll(saveList);
-//        saveList.forEach(eventPublisher::publishEvent);
-//
-//        // OutboxEvent 생성
-//        ArrayList<OutboxEvent> outboxList = new ArrayList<>();
-//        for (History history : hisList) {
-//            Map<String, Object> payload = new HashMap<>();
-//            payload.put("historyId", history.getHistoryId());
-//            payload.put("uuid", history.getUuid());
-//            payload.put("originalFile", history.getOriginalFile());
-//            payload.put("requestFormat", history.getRequestFormat());
-//
-//            outboxList.add(OutboxEvent.of("file", history.getHistoryId(), "fileConvert", payload.toString()));
-//        }
-//        outboxEventRepository.saveAll(outboxList);
-//
-//        return findHistories(uuid);
-//    }
 
     @Transactional(readOnly = true)
     public List<History> findHistories(String uuid) {
