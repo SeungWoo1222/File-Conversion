@@ -13,6 +13,7 @@ public class SubDTO {
     private String uuid;
     private String filename;
     private int percent;
+    private String convertedFile; //완료된 파일명
     private String status;
-//    private String convertedFile; 추후 완료된 파일 주소
+
 }
