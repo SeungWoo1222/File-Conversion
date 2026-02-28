@@ -21,9 +21,7 @@ public class RedisService {
         log.info("레디스 수신");
         SubDTO subDTO;
         try {
-            subDTO = om.readValue(message,SubDTO.class);
-            log.info("상태 : "+subDTO.getStatus());
-            log.info(subDTO.getFilename());
+            subDTO = om.readValue(message, SubDTO.class); //null로 들어오면 매칭 불가 -> " "
             sseService.notifyRedis(subDTO);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);

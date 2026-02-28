@@ -12,6 +12,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
@@ -57,16 +58,25 @@ public class SseService {
     public void notifyRedis(SubDTO subDTO) {
         String uuid = subDTO.getUuid();
         SseEmitter emitter = sseEmitterRegistry.getEmitter(uuid);
+
         if (emitter == null) return;
+
         try {
+            //null safe 를 위한 HashMap 자료구조로 리팩토링
+            Map<String, Object> data = new HashMap<>();
+            data.put("uuid", uuid);
+            data.put("filename", subDTO.getFilename());
+            data.put("percent", subDTO.getPercent());
+            data.put("convertedFile", subDTO.getConvertedFile());
+            data.put("status", subDTO.getStatus());
+
+            System.out.println(data.get("convertedFile"));
             emitter.send(SseEmitter.event()
                     .name("redis-caching-update")
-                    .data(Map.of(
-                            "uuid", uuid,
-                            "filename", subDTO.getFilename(),
-                            "percent", subDTO.getPercent(),
-                            "status", subDTO.getStatus())));
+                    .data(data));
+
             log.info("sse 전송 완료");
+
         } catch (IOException e) {
             sseEmitterRegistry.removeEmitter(uuid); //[수정 예정] 변환 진행 중일 때 예외 처리의 경우 sse 가 끊어지면 안됨
         }

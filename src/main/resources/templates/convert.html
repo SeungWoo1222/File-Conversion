@@ -58,6 +58,11 @@
             0% { background-color: rgba(99, 102, 241, 0.3); }
             100% { background-color: transparent; }
         }
+        /* 다운로드 링크 호버 효과 추가 */
+        .download-link:hover {
+            color: #c084fc !important;
+            text-shadow: 0 0 8px rgba(192, 132, 252, 0.6);
+        }
     </style>
 </head>
 <body>
@@ -137,7 +142,18 @@
                                        th:text="${(history.percent ?: 0) + '%'}">0%</small>
                             </td>
 
-                            <td class="message-cell small text-secondary" th:text="${history.message ?: '-'}">-</td>
+                            <td class="message-cell small">
+                                <th:block th:if="${history.status == '3' and history.convertedFile != null and !history.convertedFile.trim().isEmpty()}">
+                                    <span class="download-link"
+                                          th:onclick="handleDownloadRequest([[${history.convertedFile}]])"
+                                          style="color: #a5b4fc; cursor: pointer; text-decoration: underline; font-weight: bold;">
+                                        파일 다운로드
+                                    </span>
+                                </th:block>
+                                <th:block th:unless="${history.status == '3' and history.convertedFile != null and !history.convertedFile.trim().isEmpty()}">
+                                    <span class="text-secondary" th:text="${history.message ?: '-'}">-</span>
+                                </th:block>
+                            </td>
                         </tr>
                         <tr th:if="${#lists.isEmpty(histories)}" id="empty-row">
                             <td colspan="4" class="text-center text-muted p-4">변환 내역이 없습니다.</td>
@@ -152,6 +168,38 @@
 </div>
 
 <script th:inline="javascript">
+    // 🌟 [수정된 부분] 백엔드(/api/file/download-url)를 통해 안전하게 Presigned URL을 발급받아 현재 창에서 다운로드
+    async function handleDownloadRequest(key) {
+        if (!key || key.trim() === "") {
+            alert("아직 파일이 준비되지 않았습니다.");
+            return;
+        }
+
+        try {
+            // S3의 전체 경로(key)를 안전하게 인코딩하여 백엔드로 전달
+            const response = await fetch(`/api/file/download-url?key=${encodeURIComponent(key.trim())}`);
+
+            if (!response.ok) {
+                throw new Error(`서버 에러: ${response.status}`);
+            }
+
+            // 백엔드가 생성해준 S3 Presigned URL
+            const downloadUrl = await response.text();
+
+            // 백그라운드에서 다운로드 실행 (target="_blank" 속성 제거로 현재 탭 유지)
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+        } catch (error) {
+            console.error("다운로드 실패:", error);
+            alert("파일 다운로드 중 오류가 발생했습니다.");
+        }
+    }
+
     // 1. UUID 관리 (localStorage로 고정)
     function getOrCreateUuid() {
         let uuid = localStorage.getItem('uuid');
@@ -182,12 +230,11 @@
     initSse(myUuid);
 
     // 3. 수신한 데이터를 기반으로 테이블의 특정 행을 찾아 변경
-function updateStatusUI(data) {
+    function updateStatusUI(data) {
         if (data.uuid !== myUuid) {
             return;
         }
 
-        // 🌟 [수정된 부분] HTML 속성은 s3-filename이지만, SSE 데이터는 filename 필드에 값이 있습니다!
         const fileId = data.filename || data.s3FileName;
         const row = document.querySelector(`tr[data-s3-filename="${fileId}"]`);
 
@@ -228,10 +275,26 @@ function updateStatusUI(data) {
                 }
             }
 
-            if (messageCell && statusText === "완료") {
-                messageCell.innerText = "변환 완료";
-            } else if (messageCell) {
-                messageCell.innerText = data.status === "2" ? "처리 중..." : "-";
+            // 완료 상태일 때 handleDownloadRequest 함수 호출
+            if (messageCell) {
+                if (statusText === "완료") {
+                    const fileKey = data.convertedFile ? data.convertedFile.trim() : "";
+
+                    if (fileKey !== "") {
+                        messageCell.innerHTML = `
+                            <span class="download-link"
+                                  onclick="handleDownloadRequest('${fileKey}')"
+                                  style="color: #a5b4fc; cursor: pointer; text-decoration: underline; font-weight: bold;">
+                                파일 다운로드
+                            </span>
+                        `;
+                    } else {
+                        // convertedFile이 아직 없는 경우(공백 문자열 포함)
+                        messageCell.innerHTML = `<span class="text-secondary">파일 준비 중...</span>`;
+                    }
+                } else {
+                    messageCell.innerHTML = `<span class="text-secondary">${data.status === "2" ? "처리 중..." : "-"}</span>`;
+                }
             }
 
             row.classList.add('update-highlight');
@@ -339,7 +402,6 @@ function updateStatusUI(data) {
                 const row = document.createElement('tr');
                 row.className = 'history-row update-highlight';
                 row.setAttribute('data-id', history.historyId);
-                // 중요: 새로 추가된 행도 매칭될 수 있도록 data-s3-filename 속성을 심어줌
                 row.setAttribute('data-s3-filename', history.s3FileName);
 
                 let statusText = "대기 중";
