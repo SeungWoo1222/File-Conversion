@@ -56,7 +56,7 @@ jobs:
               --region "${AWS_REGION}" \
               --document-name "AWS-RunShellScript" \
               --instance-ids "${EC2_INSTANCE_ID}" \
-              --parameters "{\"commands\":[\"cd ~/deploy\",\"./deploy.sh ${TAG}\"]}" \
+              --parameters "{\"commands\":[\"sudo -u ssm-user -H /home/ssm-user/deploy/deploy.sh ${TAG}\"]}"              
               --query "Command.CommandId" \
               --output text)
             
