@@ -10,9 +10,9 @@ permissions:
 
 env:
   AWS_REGION: ap-northeast-2
-  ECR_REPOSITORY: "188615717003"
-  EC2_TARGET_TAG_KEY: "my-app"
-  EC2_TARGET_TAG_VALUE: "i-04d273add12b3752e"
+  AWS_ACCOUNT_ID: "188615717003"
+  ECR_REPO: "my-app"
+  EC2_INSTANCE_ID: "i-04d273add12b3752e"
 
 jobs:
   deploy:
@@ -33,16 +33,22 @@ jobs:
         - name: Build & Push Docker image (date + run number tag)
           id: build
           run: |
+            set -euo pipefail
+
             TAG="$(TZ=Asia/Seoul date +%Y%m%d-%H%M)-${GITHUB_RUN_NUMBER}"
             echo "tag=$TAG" >> "$GITHUB_OUTPUT"
             
             ECR_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}"
+            echo "ECR_URI=$ECR_URI"
+            echo "TAG=$TAG"
             
             docker build -t "${ECR_URI}:${TAG}" .
             docker push "${ECR_URI}:${TAG}"
 
         - name: Deploy on EC2 via SSM Run Command
           run: |
+            set -euo pipefail
+          
             TAG="${{ steps.build.outputs.tag }}"
             echo "Deploy tag: $TAG"
             
