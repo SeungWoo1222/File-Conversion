@@ -8,43 +8,61 @@ permissions:
   id-token: write
   contents: read
 
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY: "188615717003"
+  EC2_TARGET_TAG_KEY: "my-app"
+  EC2_TARGET_TAG_VALUE: "i-04d273add12b3752e"
+
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
-    env:
-      AWS_REGION: ap-northeast-2
-      ECR_REPOSITORY: myapp
-      EC2_TARGET_TAG_KEY: Name
-      EC2_TARGET_TAG_VALUE: my-ec2
-
     steps:
-      - uses: actions/checkout@v4
+        - uses: actions/checkout@v4
 
-      - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::188615717003:role/Role-GitHubActions-Deploy
-          aws-region: ${{ env.AWS_REGION }}
+        - name: Configure AWS credentials (OIDC)
+          uses: aws-actions/configure-aws-credentials@v4
+          with:
+            role-to-assume: arn:aws:iam::188615717003:role/github-actions-ecr-ssm-deploy # TODO
+            aws-region: ${{ env.AWS_REGION }}
 
-      - name: Login to ECR
-        uses: aws-actions/amazon-ecr-login@v2
+        - name: Login to Amazon ECR
+          uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build & Push
-        run: |
-          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-          ECR="$ACCOUNT_ID.dkr.ecr.${AWS_REGION}.amazonaws.com"
-          TAG="${GITHUB_SHA}"
+        - name: Build & Push Docker image (date + run number tag)
+          id: build
+          run: |
+            TAG="$(TZ=Asia/Seoul date +%Y%m%d-%H%M)-${GITHUB_RUN_NUMBER}"
+            echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+            
+            ECR_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/${ECR_REPO}"
+            
+            docker build -t "${ECR_URI}:${TAG}" .
+            docker push "${ECR_URI}:${TAG}"
 
-          docker build -t "$ECR/${ECR_REPOSITORY}:$TAG" .
-          docker push "$ECR/${ECR_REPOSITORY}:$TAG"
-
-          echo "IMAGE_TAG=$TAG" >> $GITHUB_ENV
-
-      - name: Deploy via SSM
-        run: |
-          aws ssm send-command \
-            --document-name "AWS-RunShellScript" \
-            --targets "Key=tag:${EC2_TARGET_TAG_KEY},Values=${EC2_TARGET_TAG_VALUE}" \
-            --parameters commands="sudo /opt/app/deploy.sh ${IMAGE_TAG}" \
-            --comment "Deploy ${IMAGE_TAG}"
+        - name: Deploy on EC2 via SSM Run Command
+          run: |
+            TAG="${{ steps.build.outputs.tag }}"
+            echo "Deploy tag: $TAG"
+            
+            CMD_ID=$(aws ssm send-command \
+              --region "${AWS_REGION}" \
+              --document-name "AWS-RunShellScript" \
+              --instance-ids "${EC2_INSTANCE_ID}" \
+              --parameters "commands=bash -lc 'cd ~/deploy && ./deploy.sh ${TAG}'" \
+              --query "Command.CommandId" \
+              --output text)
+            
+            echo "SSM CommandId: $CMD_ID"
+            
+            aws ssm wait command-executed \
+              --region "${AWS_REGION}" \
+              --command-id "$CMD_ID" \
+              --instance-id "${EC2_INSTANCE_ID}"
+            
+            aws ssm get-command-invocation \
+              --region "${AWS_REGION}" \
+              --command-id "$CMD_ID" \
+              --instance-id "${EC2_INSTANCE_ID}" \
+              --query "{Status:Status,StdOut:StandardOutputContent,StdErr:StandardErrorContent}"
