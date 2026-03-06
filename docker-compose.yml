@@ -19,27 +19,27 @@ services:
       timeout: 5s
       retries: 30
 
-  mysql:
-    image: mysql:8.0
-    container_name: mysql
-    ports:
-      - "3306:3306"
-    environment:
-      MYSQL_DATABASE: api
-      MYSQL_USER: toyboyz
-      MYSQL_PASSWORD: toytoy123
-    command:
-      - "--server-id=223344"
-      - "--log-bin=mysql-bin"
-      - "--binlog-format=ROW"
-      - "--binlog-row-image=FULL"
-    volumes:
-      - ./mysql/init:/docker-entrypoint-initdb.d
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot --silent"]
-      interval: 5s
-      timeout: 5s
-      retries: 30
+#  mysql:
+#    image: mysql:8.0
+#    container_name: mysql
+#    ports:
+#      - "3306:3306"
+#    environment:
+#      MYSQL_DATABASE: api
+#      MYSQL_USER: toyboyz
+#      MYSQL_PASSWORD: toytoy123
+#    command:
+#      - "--server-id=223344"
+#      - "--log-bin=mysql-bin"
+#      - "--binlog-format=ROW"
+#      - "--binlog-row-image=FULL"
+#    volumes:
+#      - ./mysql/init:/docker-entrypoint-initdb.d
+#    healthcheck:
+#      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot --silent"]
+#      interval: 5s
+#      timeout: 5s
+#      retries: 30
 
   app:
     profiles: [ "app" ]
@@ -49,8 +49,6 @@ services:
       - "8080:8080"
     depends_on:
       rabbitmq:
-        condition: service_healthy
-      mysql:
         condition: service_healthy
     environment:
       SPRING_RABBITMQ_HOST: rabbitmq
@@ -68,19 +66,30 @@ services:
       timeout: 5s
       retries: 30
 
-
-
   debezium-server:
     image: quay.io/debezium/server:3.4
     container_name: debezium-server
     depends_on:
       rabbitmq:
         condition: service_healthy
-      mysql:
-        condition: service_healthy
     volumes:
       - ./debezium/config:/debezium/config
       - ./debezium/data:/debezium/data
 
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
 volumes:
   rabbitmq_data:
+  redis_data:
