@@ -31,7 +31,14 @@
   ],
   "queues": [
     {
-      "name": "outbox.queue",
+      "name": "outbox.queue.file",
+      "vhost": "/",
+      "durable": true,
+      "auto_delete": false,
+      "arguments": {}
+    },
+    {
+      "name": "outbox.queue.scan",
       "vhost": "/",
       "durable": true,
       "auto_delete": false,
@@ -42,9 +49,17 @@
     {
       "source": "outbox.exchange",
       "vhost": "/",
-      "destination": "outbox.queue",
+      "destination": "outbox.queue.file",
       "destination_type": "queue",
-      "routing_key": "outbox.event.#",
+      "routing_key": "outbox.event.file",
+      "arguments": {}
+    },
+    {
+      "source": "outbox.exchange",
+      "vhost": "/",
+      "destination": "outbox.queue.scan",
+      "destination_type": "queue",
+      "routing_key": "outbox.event.scan",
       "arguments": {}
     }
   ]
