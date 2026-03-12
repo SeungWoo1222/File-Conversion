@@ -17,8 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 class RedisConnectionIntegrationTest {
 
-//    @Container
-//    static RedisContainer redis = new RedisContainer("redis:7.2");
     @Container
     static GenericContainer<?> redis =
             new GenericContainer<>("redis:7.2")
@@ -35,13 +33,6 @@ class RedisConnectionIntegrationTest {
 
     @Test
     void redis_set_and_get_should_work() {
-//        String key = "ci:test:key";
-//        String value = "hello-redis";
-//
-//        stringRedisTemplate.opsForValue().set(key, value);
-//        String result = stringRedisTemplate.opsForValue().get(key);
-//
-//        assertThat(result).isEqualTo(value);
         stringRedisTemplate.opsForValue().set("key", "value");
         assertThat(stringRedisTemplate.opsForValue().get("key")).isEqualTo("value");
     }
