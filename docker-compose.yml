@@ -19,28 +19,6 @@ services:
       timeout: 5s
       retries: 30
 
-#  mysql:
-#    image: mysql:8.0
-#    container_name: mysql
-#    ports:
-#      - "3306:3306"
-#    environment:
-#      MYSQL_DATABASE: api
-#      MYSQL_USER: toyboyz
-#      MYSQL_PASSWORD: toytoy123
-#    command:
-#      - "--server-id=223344"
-#      - "--log-bin=mysql-bin"
-#      - "--binlog-format=ROW"
-#      - "--binlog-row-image=FULL"
-#    volumes:
-#      - ./mysql/init:/docker-entrypoint-initdb.d
-#    healthcheck:
-#      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot --silent"]
-#      interval: 5s
-#      timeout: 5s
-#      retries: 30
-
   app:
     profiles: [ "app" ]
     build: .

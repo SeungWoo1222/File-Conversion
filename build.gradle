@@ -14,10 +14,23 @@ java {
     }
 }
 
+sourceSets {
+    redisIntegrationTest {
+        java.srcDir 'src/redisIntegrationTest/java'
+        resources.srcDir 'src/redisIntegrationTest/resources'
+
+        compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
+        runtimeClasspath += output + compileClasspath
+    }
+}
+
 configurations {
     compileOnly {
         extendsFrom annotationProcessor
     }
+
+    redisIntegrationTestImplementation.extendsFrom testImplementation
+    redisIntegrationTestRuntimeOnly.extendsFrom testRuntimeOnly
 }
 
 repositories {
@@ -50,8 +63,27 @@ dependencies {
     // 테스트 의존성 정리
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    // Testcontainers
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:testcontainers'
+
+    // Redis Testcontainers
+    testImplementation 'com.redis:testcontainers-redis:2.2.2'
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+tasks.register('redisIntegrationTest', Test) {
+    description = 'Runs Redis integration tests'
+    group = 'verification'
+
+    testClassesDirs = sourceSets.redisIntegrationTest.output.classesDirs
+    classpath = sourceSets.redisIntegrationTest.runtimeClasspath
+
+    useJUnitPlatform()
+    shouldRunAfter tasks.named('test')
 }
