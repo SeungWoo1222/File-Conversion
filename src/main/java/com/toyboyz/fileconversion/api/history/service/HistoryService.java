@@ -46,6 +46,7 @@ public class HistoryService {
                     .originalFile(s3Keys.get(i))
                     .originalFormat(ext)
                     .status("1")                 // 대기/업로드 준비
+                    .originalFileSizeBytes(f.size())
                     .build();
             saveList.add(h);
         }
@@ -76,6 +77,7 @@ public class HistoryService {
             payload.put("originalFormat", h.getOriginalFormat());
             payload.put("requestFormat", h.getRequestFormat());
             payload.put("fileName", h.getS3FileName());
+            payload.put("originalSize", h.getOriginalFileSizeBytes());
 
             outboxList.add(OutboxEvent.of("file", h.getHistoryId(), "fileConvert", toJson(payload)));
         }

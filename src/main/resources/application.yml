@@ -23,6 +23,12 @@ spring:
     password: ${SPRING_RABBITMQ_PASSWORD:toyboyz}
     virtual-host: ${SPRING_RABBITMQ_VHOST:/}
 
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      database: ${SPRING_DATA_REDIS_DATABASE:0}
+
 management:
   endpoints:
     web:
