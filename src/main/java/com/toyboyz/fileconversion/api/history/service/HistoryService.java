@@ -77,6 +77,7 @@ public class HistoryService {
             payload.put("originalFormat", h.getOriginalFormat());
             payload.put("requestFormat", h.getRequestFormat());
             payload.put("fileName", h.getS3FileName());
+            payload.put("originalSize", h.getOriginalFileSizeBytes());
 
             outboxList.add(OutboxEvent.of("file", h.getHistoryId(), "fileConvert", toJson(payload)));
         }

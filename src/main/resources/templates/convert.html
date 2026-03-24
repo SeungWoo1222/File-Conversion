@@ -77,6 +77,21 @@
                     <p class="text-secondary small">변환 요청 후 하단에서 실시간 상태를 확인하세요</p>
                 </div>
 
+                <div class="row g-3 mb-4">
+                    <div class="col-6">
+                        <div class="p-3 rounded-4" style="background: rgba(15, 23, 42, 0.45); border: 1px solid rgba(255,255,255,0.08);">
+                            <div class="small text-uppercase fw-bold mb-1" style="color:#a5b4fc;">누적 변환 횟수</div>
+                            <div id="globalCompletedCount" class="fw-bold" style="font-size: 1.6rem; color:#f8fafc;">0</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-3 rounded-4" style="background: rgba(15, 23, 42, 0.45); border: 1px solid rgba(255,255,255,0.08);">
+                            <div class="small text-uppercase fw-bold mb-1" style="color:#a5b4fc;">누적 처리 용량</div>
+                            <div id="globalCompletedBytes" class="fw-bold" style="font-size: 1.6rem; color:#f8fafc;">0 B</div>
+                        </div>
+                    </div>
+                </div>
+
                 <form id="uploadForm">
                     <div class="mb-4">
                         <label class="form-label small text-uppercase fw-bold" style="color:#a5b4fc">파일 업로드</label>
@@ -168,7 +183,7 @@
 </div>
 
 <script th:inline="javascript">
-    // 🌟 [수정된 부분] 백엔드(/api/file/download-url)를 통해 안전하게 Presigned URL을 발급받아 현재 창에서 다운로드
+    // 🌟 [기존] 백엔드(/api/file/download-url)를 통해 안전하게 Presigned URL을 발급받아 현재 창에서 다운로드
     async function handleDownloadRequest(key) {
         if (!key || key.trim() === "") {
             alert("아직 파일이 준비되지 않았습니다.");
@@ -176,17 +191,14 @@
         }
 
         try {
-            // S3의 전체 경로(key)를 안전하게 인코딩하여 백엔드로 전달
             const response = await fetch(`/api/file/download-url?key=${encodeURIComponent(key.trim())}`);
 
             if (!response.ok) {
                 throw new Error(`서버 에러: ${response.status}`);
             }
 
-            // 백엔드가 생성해준 S3 Presigned URL
             const downloadUrl = await response.text();
 
-            // 백그라운드에서 다운로드 실행 (target="_blank" 속성 제거로 현재 탭 유지)
             const link = document.createElement('a');
             link.href = downloadUrl;
             link.style.display = 'none';
@@ -209,27 +221,113 @@
         }
         return uuid;
     }
-    const myUuid = getOrCreateUuid();
 
-    // 2. SSE 연결 및 데이터 수신
+    const myUuid = getOrCreateUuid();
+    let fileEventSource = null;
+    let statsEventSource = null;
+
+    // 2. 파일 진행률 SSE 연결 및 데이터 수신
     function initSse(uuid) {
         console.log("📍 SSE 연결 중... UUID:", uuid);
-        const eventSource = new EventSource(`/api/sse/connect/${uuid}`);
 
-        eventSource.addEventListener('redis-caching-update', (event) => {
+        if (fileEventSource) {
+            fileEventSource.close();
+        }
+
+        fileEventSource = new EventSource(`/api/sse/connect/${uuid}`);
+
+        fileEventSource.addEventListener('redis-caching-update', (event) => {
             const data = JSON.parse(event.data);
             console.log("🔔 상태 업데이트 수신:", data);
             updateStatusUI(data);
         });
 
-        eventSource.onopen = () => console.log("✅ SSE 연결 성공");
-        eventSource.onerror = () => eventSource.close();
+        fileEventSource.onopen = () => console.log("✅ 파일 SSE 연결 성공");
+
+        fileEventSource.onerror = () => {
+            console.warn("⚠️ 파일 SSE 연결 오류");
+            fileEventSource.close();
+
+            setTimeout(() => {
+                initSse(uuid);
+            }, 3000);
+        };
     }
 
-    // 초기 실행
-    initSse(myUuid);
+    // 3. 전역 통계 초기 조회
+    async function loadStatsSummary() {
+        try {
+            const response = await fetch('/api/stats/summary');
 
-    // 3. 수신한 데이터를 기반으로 테이블의 특정 행을 찾아 변경
+            if (!response.ok) {
+                throw new Error(`stats summary load failed: ${response.status}`);
+            }
+
+            const summary = await response.json();
+            updateStatsSummaryUI(summary);
+        } catch (error) {
+            console.error("전역 통계 초기 조회 실패:", error);
+        }
+    }
+
+    // 4. 전역 통계 SSE 연결
+    function initStatsSse() {
+        if (statsEventSource) {
+            statsEventSource.close();
+        }
+
+        statsEventSource = new EventSource('/api/sse/stats');
+
+        statsEventSource.addEventListener('stats-summary-update', (event) => {
+            const summary = JSON.parse(event.data);
+            console.log("📊 전역 통계 업데이트 수신:", summary);
+            updateStatsSummaryUI(summary);
+        });
+
+        statsEventSource.onopen = () => console.log("✅ stats SSE 연결 성공");
+
+        statsEventSource.onerror = () => {
+            console.warn("⚠️ stats SSE 연결 오류");
+            statsEventSource.close();
+
+            setTimeout(() => {
+                initStatsSse();
+            }, 3000);
+        };
+    }
+
+    // 5. 전역 통계 UI 갱신
+    function updateStatsSummaryUI(summary) {
+        const countEl = document.getElementById('globalCompletedCount');
+        const bytesEl = document.getElementById('globalCompletedBytes');
+
+        if (countEl) {
+            countEl.textContent = Number(summary.completedCount || 0).toLocaleString();
+        }
+
+        if (bytesEl) {
+            bytesEl.textContent = formatBytes(summary.completedBytes || 0);
+        }
+    }
+
+    // 6. 바이트 포맷터
+    function formatBytes(bytes) {
+        const value = Number(bytes || 0);
+
+        if (value < 1024) return `${value} B`;
+        if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+        if (value < 1024 * 1024 * 1024) return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+        return `${(value / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+    }
+
+    // 7. 페이지 초기 실행
+    document.addEventListener('DOMContentLoaded', async () => {
+        initSse(myUuid);
+        await loadStatsSummary();
+        initStatsSse();
+    });
+
+    // 8. 수신한 데이터를 기반으로 테이블의 특정 행을 찾아 변경
     function updateStatusUI(data) {
         if (data.uuid !== myUuid) {
             return;
@@ -275,7 +373,6 @@
                 }
             }
 
-            // 완료 상태일 때 handleDownloadRequest 함수 호출
             if (messageCell) {
                 if (statusText === "완료") {
                     const fileKey = data.convertedFile ? data.convertedFile.trim() : "";
@@ -289,7 +386,6 @@
                             </span>
                         `;
                     } else {
-                        // convertedFile이 아직 없는 경우(공백 문자열 포함)
                         messageCell.innerHTML = `<span class="text-secondary">파일 준비 중...</span>`;
                     }
                 } else {
@@ -304,15 +400,17 @@
         }
     }
 
-    // 4. 파일 업로드 목록 업데이트 UI
+    // 9. 파일 업로드 목록 업데이트 UI
     function updateFileList() {
         const input = document.getElementById('fileInput');
         const list = document.getElementById('fileList');
         list.innerHTML = '';
+
         if (input.files.length === 0) {
             list.innerHTML = '<li class="list-group-item text-muted text-center border-0" style="background:transparent">파일을 선택하세요</li>';
             return;
         }
+
         Array.from(input.files).forEach(f => {
             const li = document.createElement('li');
             li.className = 'list-group-item text-white border-0 py-2';
@@ -322,7 +420,7 @@
         });
     }
 
-    // 5. 업로드 + 완료 처리 (Presigned URL 방식)
+    // 10. 업로드 + 완료 처리 (Presigned URL 방식)
     document.getElementById('uploadForm').addEventListener('submit', async function(e) {
         e.preventDefault();
 
@@ -391,6 +489,7 @@
                 location.reload();
                 return;
             }
+
             const newHistories = JSON.parse(text);
 
             const emptyRow = document.getElementById('empty-row');
@@ -446,7 +545,6 @@
             alert("업로드 처리 중 오류가 발생했습니다.");
         }
     });
-
 </script>
 </body>
 </html>
