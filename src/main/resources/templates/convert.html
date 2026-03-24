@@ -112,9 +112,9 @@
 
         .stats-title {
             color: #a5b4fc;
-            font-weight: 700;
+            font-weight: 800;
             margin-bottom: 1.2rem;
-            font-size: 1.1rem;
+            font-size: 1.4rem;
         }
 
         .stats-box {
@@ -343,22 +343,21 @@
         <!-- 오른쪽: 통계 전용 카드 -->
         <div class="col-lg-4 right-panel">
             <div class="card p-4 stats-sidebar">
-                <div class="server-badge">GLOBAL / SERVER-WIDE</div>
-                <div class="stats-title">서버 전체 실시간 파일 통계</div>
+                <div class="stats-title">실시간 파일 변환 현황</div>
 
                 <div class="stats-box">
-                    <div class="stats-label">전체 누적 변환 완료 건수</div>
+                    <div class="stats-label">전체 누적 변환 건수</div>
                     <div id="globalCompletedCount" class="stats-value">0</div>
                     <div class="stats-subtext">
-                        현재 접속 사용자 기준이 아니라, 서비스 전체 누적 통계입니다.
+                        현재 접속 사용자와 관계없이 서버 전체에서 누적된 변환 수입니다.
                     </div>
                 </div>
 
                 <div class="stats-box mb-0">
-                    <div class="stats-label">전체 누적 처리 용량</div>
+                    <div class="stats-label">전체 누적 변환 용량</div>
                     <div id="globalCompletedBytes" class="stats-value">0 B</div>
                     <div class="stats-subtext">
-                        서버에서 완료 처리된 전체 파일 용량 합계입니다.
+                        서버에서 지금까지 처리한 파일 용량 합계입니다.
                     </div>
                 </div>
             </div>
