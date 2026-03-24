@@ -46,6 +46,7 @@ public class HistoryService {
                     .originalFile(s3Keys.get(i))
                     .originalFormat(ext)
                     .status("1")                 // 대기/업로드 준비
+                    .originalFileSizeBytes(f.size())
                     .build();
             saveList.add(h);
         }

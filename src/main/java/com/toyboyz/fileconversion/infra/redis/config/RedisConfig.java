@@ -1,6 +1,7 @@
 package com.toyboyz.fileconversion.infra.redis.config;
 
 import com.toyboyz.fileconversion.infra.redis.service.RedisService;
+import com.toyboyz.fileconversion.infra.sse.service.StatsRedisSubscriber;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -21,14 +22,21 @@ public class RedisConfig {
         return new MessageListenerAdapter(sub, "subProg");
     }
 
+    @Bean
+    MessageListenerAdapter statsMessageListenerAdapter(StatsRedisSubscriber sub) {
+        return new MessageListenerAdapter(sub, "onStatsUpdated");
+    }
+
 
     @Bean
     RedisMessageListenerContainer container(RedisConnectionFactory connectionFactory,
-                                            MessageListenerAdapter listenerAdapter) {
+                                            MessageListenerAdapter listenerAdapter,
+                                            MessageListenerAdapter statsMessageListenerAdapter) {
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(connectionFactory);
 
         container.addMessageListener(listenerAdapter, new PatternTopic("redis-file-msg"));
+        container.addMessageListener(statsMessageListenerAdapter, new PatternTopic("stats-updated"));
         return container;
     }
 }
