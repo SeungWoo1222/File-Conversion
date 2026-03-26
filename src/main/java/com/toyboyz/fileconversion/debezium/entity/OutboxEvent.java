@@ -18,9 +18,6 @@ public class OutboxEvent extends BaseTime {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(length = 36, nullable = false, updatable = false, unique = true)
-    private String uuid; // 이벤트 식별용 uuid
-
     // 도메인 분류
     // ex) file, alert
     @Column(name = "aggregate_type", nullable = false, length = 50)
@@ -50,7 +47,6 @@ public class OutboxEvent extends BaseTime {
                         String eventType,
                         String payload) {
 
-        this.uuid = UUID.randomUUID().toString();
         this.aggregateType = aggregateType;
         this.aggregateId = aggregateId;
         this.eventType = eventType;
