@@ -69,12 +69,9 @@ public class SseService {
             data.put("percent", subDTO.getPercent());
             data.put("convertedFile", subDTO.getConvertedFile());
             data.put("status", subDTO.getStatus());
-
-            System.out.println(data.get("convertedFile"));
             emitter.send(SseEmitter.event()
                     .name("redis-caching-update")
                     .data(data));
-
             log.info("sse 전송 완료");
 
         } catch (IOException e) {
