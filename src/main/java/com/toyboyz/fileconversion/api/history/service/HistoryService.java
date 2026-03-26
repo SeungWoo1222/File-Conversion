@@ -78,7 +78,7 @@ public class HistoryService {
             payload.put("requestFormat", h.getRequestFormat());
             payload.put("fileName", h.getS3FileName());
             payload.put("originalSize", h.getOriginalFileSizeBytes());
-            payload.put("originalFileName", h.getFileName());
+            payload.put("originalFileName", removeExtension(h.getOriginalFile()));
 
             outboxList.add(OutboxEvent.of("file", h.getHistoryId(), "fileConvert", toJson(payload)));
         }
@@ -124,5 +124,14 @@ public class HistoryService {
         int idx = filename.lastIndexOf('.');
         if (idx < 0 || idx == filename.length() - 1) return null;
         return filename.substring(idx + 1).toLowerCase();
+    }
+
+    private String removeExtension(String filename) {
+        if (filename == null) return null;
+
+        int idx = filename.lastIndexOf('.');
+        if (idx <= 0) return filename; // 확장자 없거나 .gitignore 같은 경우 그대로 반환
+
+        return filename.substring(0, idx);
     }
 }
