@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 public class SubDTO {
 
     private String uuid;
-    private String filename;
+    private String fileName;
     private int percent;
     private String convertedFile; //완료된 파일명
     private String status;

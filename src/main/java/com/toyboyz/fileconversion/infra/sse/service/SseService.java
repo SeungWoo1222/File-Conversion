@@ -60,23 +60,18 @@ public class SseService {
         SseEmitter emitter = sseEmitterRegistry.getEmitter(uuid);
 
         if (emitter == null) return;
-
         try {
             //null safe 를 위한 HashMap 자료구조로 리팩토링
             Map<String, Object> data = new HashMap<>();
             data.put("uuid", uuid);
-            data.put("filename", subDTO.getFilename());
+            data.put("fileName", subDTO.getFileName());
             data.put("percent", subDTO.getPercent());
             data.put("convertedFile", subDTO.getConvertedFile());
             data.put("status", subDTO.getStatus());
-
-            System.out.println(data.get("convertedFile"));
             emitter.send(SseEmitter.event()
                     .name("redis-caching-update")
                     .data(data));
-
             log.info("sse 전송 완료");
-
         } catch (IOException e) {
             sseEmitterRegistry.removeEmitter(uuid); //[수정 예정] 변환 진행 중일 때 예외 처리의 경우 sse 가 끊어지면 안됨
         }

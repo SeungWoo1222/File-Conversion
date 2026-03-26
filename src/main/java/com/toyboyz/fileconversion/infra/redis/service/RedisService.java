@@ -19,9 +19,8 @@ public class RedisService {
 
     public void subProg(String message) {
         log.info("레디스 수신");
-        SubDTO subDTO;
         try {
-            subDTO = om.readValue(message, SubDTO.class); //null로 들어오면 매칭 불가 -> " "
+            SubDTO subDTO = om.readValue(message, SubDTO.class); //null로 들어오면 매칭 불가 -> " "
             sseService.notifyRedis(subDTO);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);

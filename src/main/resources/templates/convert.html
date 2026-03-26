@@ -601,7 +601,7 @@
             return;
         }
 
-        const fileId = data.filename || data.s3FileName;
+        const fileId = data.fileName || data.s3FileName;
         const row = document.querySelector(`tr[data-s3-filename="${fileId}"]`);
 
         if (row) {
@@ -786,6 +786,9 @@
                 } else if (history.status == '3') {
                     statusText = "완료";
                     badgeClass = "bg-success";
+                } else if (history.status == '9') {
+                    statusText = "실패";
+                    badgeCLass = "badge bg-danger";
                 }
 
                 row.innerHTML = `
