@@ -34,9 +34,15 @@ public class History extends BaseTime {
     //원본 파일 경로
     @Column(name = "original_file",length = 1024)
     private String originalFile;
+
     //원본 파일 포맷
     @Column(name = "original_format",length = 10)
     private String originalFormat;
+
+    //원본 파일 사이즈
+    @Column(name = "original_file_size_bytes", nullable = false)
+    @Builder.Default
+    private Long originalFileSizeBytes = 0L;
 
     //변환 파일 경로
     @Column(name = "converted_file",length = 1024)
