@@ -65,7 +65,6 @@ public class SseService {
             Map<String, Object> data = new HashMap<>();
             data.put("uuid", uuid);
             data.put("fileName", subDTO.getFileName());
-            System.out.println("notify : " + subDTO.getFileName());
             data.put("percent", subDTO.getPercent());
             data.put("convertedFile", subDTO.getConvertedFile());
             data.put("status", subDTO.getStatus());
