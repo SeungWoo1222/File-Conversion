@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 @Builder
 public class SubDTO {
 
+    private Long historyId;
     private String uuid;
     private String fileName;
     private int percent;

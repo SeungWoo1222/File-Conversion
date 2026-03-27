@@ -7,6 +7,7 @@ import com.toyboyz.fileconversion.api.history.entity.History;
 import com.toyboyz.fileconversion.api.history.repository.HistoryRepository;
 import com.toyboyz.fileconversion.debezium.entity.OutboxEvent;
 import com.toyboyz.fileconversion.debezium.repository.OutboxEventRepository;
+import com.toyboyz.fileconversion.infra.redis.dto.SubDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -85,31 +86,33 @@ public class HistoryService {
 
             historyRepository.saveAll(histories);
             outboxEventRepository.saveAll(outboxList);
-
     }
 
-    @Transactional(readOnly = true)
-    public List<History> findHistories(String uuid) {
-        return historyRepository.findAllByUuidAndStatus(uuid,"1");
-    }
 
     @Transactional
-    public void updateStatus(Long id) {
-        History history = historyRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("해당 기록이 없습니다."));
-        history.setStatus("3");
-        historyRepository.save(history);
-        eventPublisher.publishEvent(history);
+    public void updateHistoryEvent(SubDTO subDTO) {
+        try {
+            //변환 완료일 때만 실행
+            if (subDTO.getStatus().equals("3")) {
+                History history = historyRepository.findById(subDTO.getHistoryId()).orElseThrow();
+                history.updateHistory(subDTO.getStatus(), subDTO.getConvertedFile());
+                historyRepository.save(history);
+            }
+        } catch (Exception e) {
+            log.info("실시간 이벤트 데이터를 통한 history 갱신 실패: {}",e.getMessage());
+        }
     }
+
+
+
+
+
 
     @Transactional(readOnly = true)
     public List<History> getByIds(List<Long> ids) {
         return historyRepository.findAllById(ids);
     }
 
-    @Transactional(readOnly = true)
-    public List<History> findAllByUuidAndStatus(String uuid) {
-        return historyRepository.findAllByUuidAndStatus(uuid, "2");
-    }
 
     private String toJson(Object obj) {
         try {

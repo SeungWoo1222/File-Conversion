@@ -46,7 +46,6 @@ public class OutboxEvent extends BaseTime {
                         Long aggregateId,
                         String eventType,
                         String payload) {
-
         this.aggregateType = aggregateType;
         this.aggregateId = aggregateId;
         this.eventType = eventType;
@@ -57,7 +56,6 @@ public class OutboxEvent extends BaseTime {
                                  Long aggregateId,
                                  String eventType,
                                  String payload) {
-
         return new OutboxEvent(
                 aggregateType,
                 aggregateId,
