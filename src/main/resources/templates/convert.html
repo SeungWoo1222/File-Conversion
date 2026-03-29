@@ -258,8 +258,7 @@
                         <label class="form-label small text-uppercase fw-bold" style="color:#a5b4fc">선택된 파일 목록</label>
                         <div class="file-list-container p-2">
                             <ul id="fileList" class="list-group list-group-flush">
-                                <li class="list-group-item text-muted text-center border-0"
-                                    style="background:transparent">
+                                <li class="list-group-item text-center border-0" style="background:transparent; color:#cbd5e1; font-weight:600;">
                                     파일을 선택하세요
                                 </li>
                             </ul>
@@ -267,10 +266,11 @@
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label small text-uppercase fw-bold text-indigo-300">변환 포맷</label>
+                        <label class="form-label small text-uppercase fw-bold" style="color:#a5b4fc">변환 포맷</label>
                         <select class="form-select" name="targetFormat" required>
                             <option value="" disabled selected>포맷 선택</option>
-                            <option th:each="format : ${formats}" th:value="${format}" th:text="${format}">PDF</option>
+                            <option value="PDF" selected>PDF</option>
+<!--                            <option th:each="format : ${formats}" th:value="${format}" th:text="${format}">PDF</option>-->
                         </select>
                     </div>
 
