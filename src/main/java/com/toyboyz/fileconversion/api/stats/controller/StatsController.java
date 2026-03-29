@@ -1,4 +1,4 @@
-package com.toyboyz.fileconversion.api.stats;
+package com.toyboyz.fileconversion.api.stats.controller;
 
 import com.toyboyz.fileconversion.api.stats.dto.StatsSummaryResponse;
 import com.toyboyz.fileconversion.api.stats.service.StatsQueryService;
