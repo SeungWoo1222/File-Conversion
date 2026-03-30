@@ -8,6 +8,7 @@ import com.toyboyz.fileconversion.infra.sse.service.SseService;
 import com.toyboyz.fileconversion.infra.sse.service.StatsSseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -17,7 +18,10 @@ public class RedisService {
 
     private final SseService sseService;
     private final StatsSseService statsSseService;
+    private final StringRedisTemplate redisTemplate;
     private final ObjectMapper om;
+
+    private static final String GLOBAL_KEY = "stats:global";
 
     public void subProg(String message) {
         log.info("레디스 수신");
@@ -25,8 +29,10 @@ public class RedisService {
             SubDTO subDTO = om.readValue(message, SubDTO.class); //null로 들어오면 매칭 불가 -> " "
             sseService.notifyRedis(subDTO);
 
-            // 완료 상태면 전역 통계 SSE도 전송
+            // 완료 상태면 전역 통계 Redis 값 증가 및 SSE 전송
             if (isCompleted(subDTO)) {
+                redisTemplate.opsForHash().increment(GLOBAL_KEY, "completedCount", 1);
+                redisTemplate.opsForHash().increment(GLOBAL_KEY, "completedBytes", subDTO.getSize());
                 statsSseService.broadcastLatestSummary();
             }
 

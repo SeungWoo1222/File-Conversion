@@ -15,5 +15,6 @@ public class SubDTO {
     private int percent;
     private String convertedFile; //완료된 파일명
     private String status;
+    private int size;
 
 }
