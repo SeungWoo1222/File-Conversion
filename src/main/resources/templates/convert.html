@@ -267,10 +267,11 @@
                     </div>
 
                     <div class="mb-4">
-                        <label class="form-label small text-uppercase fw-bold text-indigo-300">변환 포맷</label>
+                        <label class="form-label small text-uppercase fw-bold" style="color:#a5b4fc">변환 포맷</label>
                         <select class="form-select" name="targetFormat" required>
                             <option value="" disabled selected>포맷 선택</option>
-                            <option th:each="format : ${formats}" th:value="${format}" th:text="${format}">PDF</option>
+                            <option value="PDF" selected>PDF</option>
+<!--                            <option th:each="format : ${formats}" th:value="${format}" th:text="${format}">PDF</option>-->
                         </select>
                     </div>
 
