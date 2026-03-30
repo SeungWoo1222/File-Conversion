@@ -20,9 +20,11 @@ public class SseHeartbeatScheduler {
     @Scheduled(fixedRate = 6000) //1분 주기
     public void sendHeartbeat() {
         Map<String, SseEmitter> emitters = sseEmitterRegistry.getEmitters();
+
         if (emitters == null || emitters.isEmpty()) {
             return;
         }
+
         for (Map.Entry<String, SseEmitter> entry : emitters.entrySet()) {
             String uuid = entry.getKey();
             SseEmitter emitter = entry.getValue();

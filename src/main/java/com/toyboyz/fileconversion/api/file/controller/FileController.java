@@ -22,17 +22,6 @@ public class FileController {
 
     private final FileService fileService;
 
-    //파일 변환 요청 시 해당 컨트롤러 호출
-    //파일을 s3로 전송 + 기록 저장
-    //Debezium 이 기록을 캡처해서 큐로 보내야함
-//    @PostMapping("/upload")
-//    public ResponseEntity<?> fileUpload(@RequestParam("files") List<MultipartFile> files,
-//                                        @RequestParam("targetFormat") String targetFormat,
-//                                        @RequestParam("uuid") String uuid) {
-//        List<History> res = fileService.sendToS3(files,targetFormat,uuid);
-//        return new ResponseEntity<>(res,HttpStatus.OK);
-//    }
-
     @PostMapping("/upload-init")
     @ResponseBody
     public UploadInitResponse uploadInit(@RequestBody UploadInitRequest req) {

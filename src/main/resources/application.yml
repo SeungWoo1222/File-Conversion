@@ -16,13 +16,6 @@ spring:
       hibernate.format_sql: true
       dialect: org.hibernate.dialect.MySQL8InnoDBDialect
 
-  rabbitmq:
-    host: ${SPRING_RABBITMQ_HOST:localhost}
-    port: ${SPRING_RABBITMQ_PORT:5672}
-    username: ${SPRING_RABBITMQ_USERNAME:toyboyz}
-    password: ${SPRING_RABBITMQ_PASSWORD:toyboyz}
-    virtual-host: ${SPRING_RABBITMQ_VHOST:/}
-
   data:
     redis:
       host: ${SPRING_DATA_REDIS_HOST:localhost}

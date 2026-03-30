@@ -1,34 +1,4 @@
 services:
-#  rabbitmq:
-#    image: rabbitmq:3-management
-#    container_name: rabbitmq
-#    ports:
-#      - "5672:5672"
-#      - "15672:15672"
-#    environment:
-#      RABBITMQ_DEFAULT_VHOST: /
-#      RABBITMQ_DEFAULT_USER: toyboyz
-#      RABBITMQ_DEFAULT_PASS: toyboyz
-#    volumes:
-#      - rabbitmq_data:/var/lib/rabbitmq
-#      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
-#      - ./rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
-#    healthcheck:
-#      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
-#      interval: 5s
-#      timeout: 5s
-#      retries: 30
-#
-#  debezium-server:
-#    image: quay.io/debezium/server:3.4
-#    container_name: debezium-server
-#    depends_on:
-#      rabbitmq:
-#        condition: service_healthy
-#    volumes:
-#      - ./debezium/config:/debezium/config
-#      - ./debezium/data:/debezium/data
-
   redis:
     image: redis:7-alpine
     container_name: redis

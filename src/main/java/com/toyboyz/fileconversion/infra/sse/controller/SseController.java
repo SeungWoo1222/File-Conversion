@@ -51,11 +51,4 @@ public class SseController {
         return statsSseService.connect();
     }
 
-
-
-    @PatchMapping("/{id}")
-    public void patchStatus(@PathVariable("id") Long id) {
-        historyService.updateStatus(id);
-    }
-
 }

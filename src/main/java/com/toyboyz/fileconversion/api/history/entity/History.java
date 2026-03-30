@@ -57,6 +57,13 @@ public class History extends BaseTime {
     private String status;
 
 
+
+    //레디스에서 넘어온 데이터를 통해 history 를 갱신
+    public void updateHistory(String status,String convertedFile) {
+        this.status=status;
+        this.convertedFile=convertedFile;
+    }
+
     public void setStatus(String status) {
         this.status = status;
     }

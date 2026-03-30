@@ -36,17 +36,11 @@ public class OutboxEvent extends BaseTime {
     @Column(name = "payload", nullable = false, columnDefinition = "TEXT")
     private String payload; // JSON 문자열
 
-    // 기본 값
-//    @PrePersist
-//    void prePersist() {
-//        if (this.uuid == null) this.uuid = UUID.randomUUID().toString();
-//    }
 
     private OutboxEvent(String aggregateType,
                         Long aggregateId,
                         String eventType,
                         String payload) {
-
         this.aggregateType = aggregateType;
         this.aggregateId = aggregateId;
         this.eventType = eventType;
@@ -57,7 +51,6 @@ public class OutboxEvent extends BaseTime {
                                  Long aggregateId,
                                  String eventType,
                                  String payload) {
-
         return new OutboxEvent(
                 aggregateType,
                 aggregateId,
