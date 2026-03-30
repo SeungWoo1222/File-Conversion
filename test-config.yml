@@ -1,0 +1,28 @@
+config:
+  target: 'http://localhost:8080'
+  phases:
+    - duration: 10
+      arrivalRate: 5
+      name: "1단계: 부하테스트 예열"
+#    - duration: 120
+#      arrivalRate: 5
+#      rampTo: 30
+#      name: "2단계: 점진적으로 증가됨"
+#    - duration: 180
+#      arrivalRate: 30
+#      name: "3단계: 평균 운영 부하"
+#    - duration: 60
+#      arrivalRate: 100
+#      name: "4단계: 트래픽 스파이크"
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+scenarios:
+  - name: "upload"
+    flow:
+      - post:
+          url: "/file/upload-complete"
+          json:
+            uuid: "{{ $uuid }}"
+            historyIds: [ 20557 ]
