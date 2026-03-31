@@ -18,9 +18,21 @@
 - 회원가입없이 사용자의 이미지 파일을 PDF 문서로 변환하여 실시간으로 신속하고 안전하게 전달합니다.
 - 이미지 파일 변환 목적만을 가진 사용자를 위한 별도의 설정없는 직관적인 UI 를 통해 누구나 쉽게 이용 가능합니다.
 - 변환 건에 대한 내역이 실시간으로 통계에 누적반영되어 서비스의 신뢰성을 보장합니다.
----
+<br>
 
+## 👤 멤버 구성
+
+| 김주원 | 진승우 |
+| :---: | :---: |
+| <img src="" width="200" alt="김주원 프로필 사진"> | <img src="" width="200" alt="진승우 프로필 사진"> |
+| [@goyois](https://github.com/goyois) | [@SeungWoo1222](https://github.com/SeungWoo1222) |
+
+---
 ## 1.개발 환경
+<div align="center">
+<img width="1792" height="1063" alt="undefined" src="https://github.com/user-attachments/assets/32d1b62d-905f-4b86-b306-ce98e8743ff6" />
+</div>
+
 [Backend]
 - Language: Java 17
 - Framework: Spring Boot
@@ -65,19 +77,18 @@
 - #### Artillery
    - 실제 운영환경에서 여러 사용자가 동시에 파일을 업로드했을 때 API Server 가 무너지지않고 성공적으로 비동기 처리를 할 수 있는지 검증하기 위해 도입했습니다.
    - 임의로 총 4단계의 가상의 시나리오를 작성하여 동시 요청수를 높여가며 API Server 로 요청을 보내 Debezium 이 정상적으로 메세지를 Publishing(Trigger) 하는지 확인해볼 수 있었습니다.
-
 ---
 
 ## 3.시퀀스 다이어그램(UML)
-
 <div align="center">
 <img width="1121" height="522" alt="file-conversion-uml drawio" src="https://github.com/user-attachments/assets/e383735f-df02-4038-9e9c-4ab19cee81a9" />
+</div>
 
 ---
-멤버 구성
-
----
-ERD
+## 4.데이터베이스 테이블(ERD)
+<div align="center">
+<img width="1305" height="572" alt="스크린샷 2026-03-31 오후 4 23 01" src="https://github.com/user-attachments/assets/25af4882-2e79-4737-8077-20622cbf2b11" />
+</div>
 
 ---
 서버 아키텍처
