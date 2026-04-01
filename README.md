@@ -90,8 +90,8 @@
 </div>
 
 ---
-## 5.서버 아키텍처
-<img width="1081" height="661" alt="image" src="https://github.com/user-attachments/assets/0855fe2b-a8da-46b8-b21b-6e7fe36e24c4" />
+## 5.클라우드 아키텍처
+<img width="1081" height="661" alt="image" src="https://github.com/user-attachments/assets/4b4dbab5-2056-4199-bba8-51e96a422907" />
 
 ---
 ## 6.기능 시연 
@@ -112,6 +112,7 @@
 
 ---
 ## 7.역할 분담
+### 김주원
  - ### Backend
  - 서버 아키텍처 설계
    - Event-Driven Architecture(EDA) 기반 아키텍처 설계 및 구축
