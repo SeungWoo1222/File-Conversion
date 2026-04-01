@@ -91,6 +91,7 @@
 
 ---
 ## 5.서버 아키텍처
+<img width="1081" height="661" alt="image" src="https://github.com/user-attachments/assets/0855fe2b-a8da-46b8-b21b-6e7fe36e24c4" />
 
 ---
 ## 6.기능 시연 
