@@ -92,7 +92,8 @@
 
 ---
 ## 5.클라우드 아키텍처
-<img width="1081" height="661" alt="image" src="https://github.com/user-attachments/assets/4b4dbab5-2056-4199-bba8-51e96a422907" />
+<img width="792" height="481" alt="image" src="https://github.com/user-attachments/assets/f6503039-565f-43b1-abc4-2f7d6a197f68" />
+
 
 ---
 ## 6.기능 시연 
@@ -137,6 +138,40 @@
    - Vanilla JS 기반의 SSE 를 통해 작업 상태 데이터를 실시간으로 반영
  - 동적 진행 상태 표시(Progress Bar) 및 UI 트리거 구현
    - 변환 작업 진행률을 실시간으로 업데이트하는 Progress Bar 구현
+
+### 진승우
+- ### Backend / Infra
+- AWS 클라우드 아키텍처 설계 및 구축
+  - Route 53, ACM, ALB를 활용하여 사용자 요청이 HTTPS로 안전하게 유입되도록 구성
+  - API EC2, Worker EC2, RDS를 Private Subnet에 배치하고, NAT Gateway를 통해 필요한 아웃바운드 통신만 허용하도록 설계
+  - Session Manager 기반으로 서버 운영 환경을 구성하여 퍼블릭 SSH 포트 개방 없이 인스턴스에 접근할 수 있도록 구축
+  - S3를 파일 저장소로 연동하고, 업로드/변환 흐름에 맞는 네트워크 구조를 설계
+
+- 파일 업로드 API 설계 및 구현
+  - `upload-init` / `upload-complete` 2단계 업로드 API를 구현
+  - 서버가 직접 S3 Key와 UUID 기반 파일명을 생성하여 클라이언트의 임의 경로 업로드를 방지
+  - Presigned URL 기반 업로드를 적용하여, 클라이언트가 API 서버를 거치지 않고 S3에 직접 파일을 업로드하도록 구성했습니다.
+  - API 서버는 파일 자체를 중계하지 않고 업로드 경로 생성, URL 발급, 업로드 완료 검증만 담당하도록 분리했습니다.
+
+- 실시간 전역 통계 기능 구현
+  - Redis Hash(`stats:global`) 기반으로 서비스 전체 누적 변환 건수와 용량을 관리
+  - SSE 연결 시 최신 전역 통계 값을 즉시 내려주고, 변경 발생 시 전체 구독자에게 브로드캐스트하도록 구현
+  - 서비스 전체 기준 통계를 별도로 분리하여 개별 파일 진행률과 전역 누적 통계가 섞이지 않도록 설계
+
+- Redis / DB 정합성 보정 로직 구현
+  - 1분 주기의 스케줄러를 통해 Redis 전역 통계를 DB 단일 집계 테이블에 flush 하도록 구현
+  - 자정 기준 스케줄러를 통해 History 테이블 완료 이력을 다시 집계하고 Redis / DB 값을 overwrite 하여 정합성을 보정
+  - 단일 PK(`global`) 기반의 집계 테이블 구조를 사용하여 Hot Row 문제를 최소화하면서 누적 통계를 안정적으로 유지
+  - Redis 기반 실시간 조회를 중심으로 구현했으며, 장애 상황에서의 복구를 위해 DB 집계 테이블 fallback 구조를 설계했습니다.
+
+- RMQ / CDC
+  - 비동기 변환 요청의 신뢰성을 높이기 위해 Outbox 패턴을 적용했습니다.
+  - 업로드 완료 시 Debezium CDC가 Outbox 테이블의 변경을 감지해 RabbitMQ로 이벤트를 발행하도록 구성했습니다.
+  - 이를 통해 애플리케이션이 직접 브로커에 즉시 publish하는 구조보다 이벤트 유실 가능성을 줄였습니다.
+ 
+- ci / cd
+- s3 바이러스 검사
+- 이미지 최적화
 ---
 ## 8.트러블 슈팅
 ### 김주원
@@ -172,7 +207,9 @@
   - 변환 실패 로그 조회
   - 일별 변환 횟수 통계 조회
 - 리드미 실시간 변환 현황 
-  
+- api, worker, cdc 앱 모듈화
+- 업로드 이미지 최적화
+- s3 바이러스 검사
 
 
 
