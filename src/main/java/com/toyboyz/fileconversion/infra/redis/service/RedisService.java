@@ -3,6 +3,7 @@ package com.toyboyz.fileconversion.infra.redis.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.toyboyz.fileconversion.api.stats.service.StatsQueryService;
 import com.toyboyz.fileconversion.infra.redis.dto.SubDTO;
 import com.toyboyz.fileconversion.infra.sse.service.SseService;
 import com.toyboyz.fileconversion.infra.sse.service.StatsSseService;
@@ -18,6 +19,7 @@ public class RedisService {
 
     private final SseService sseService;
     private final StatsSseService statsSseService;
+    private final StatsQueryService statsQueryService;
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper om;
 
@@ -31,6 +33,7 @@ public class RedisService {
 
             // 완료 상태면 전역 통계 Redis 값 증가 및 SSE 전송
             if (isCompleted(subDTO)) {
+                statsQueryService.ensureGlobalStatsKey();
                 redisTemplate.opsForHash().increment(GLOBAL_KEY, "completedCount", 1);
                 redisTemplate.opsForHash().increment(GLOBAL_KEY, "completedBytes", subDTO.getSize());
                 statsSseService.broadcastLatestSummary();
