@@ -4,10 +4,8 @@ plugins {
 
 dependencies {
     implementation project(':common-core')
-    implementation project(':file-domain')
     implementation project(':infra-s3')
     implementation project(':infra-redis')
-    implementation project(':infra-rabbit')
 
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'

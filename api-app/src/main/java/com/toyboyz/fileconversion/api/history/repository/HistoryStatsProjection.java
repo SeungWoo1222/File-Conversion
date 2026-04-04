@@ -1,4 +1,4 @@
-package com.toyboyz.fileconversion.domain.history.repository;
+package com.toyboyz.fileconversion.api.history.repository;
 
 public interface HistoryStatsProjection {
     long getCompletedCount();

@@ -1,4 +1,4 @@
-package com.toyboyz.fileconversion.worker.notification.slack;
+package com.toyboyz.fileconversion.common.slack;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

@@ -3,7 +3,7 @@ package com.toyboyz.fileconversion.api.file.service;
 import com.toyboyz.fileconversion.api.file.dto.request.UploadCompleteRequest;
 import com.toyboyz.fileconversion.api.file.dto.request.UploadInitRequest;
 import com.toyboyz.fileconversion.api.file.dto.response.UploadInitResponse;
-import com.toyboyz.fileconversion.domain.history.entitiy.History;
+import com.toyboyz.fileconversion.api.history.entitiy.History;
 import com.toyboyz.fileconversion.api.history.service.HistoryService;
 import com.toyboyz.fileconversion.infra.s3.service.S3StorageService;
 import lombok.RequiredArgsConstructor;

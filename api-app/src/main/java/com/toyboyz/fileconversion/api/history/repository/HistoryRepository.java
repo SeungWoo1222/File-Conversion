@@ -1,4 +1,4 @@
-package com.toyboyz.fileconversion.domain.history.repository;
+package com.toyboyz.fileconversion.api.history.repository;
 
 import com.toyboyz.fileconversion.domain.history.entitiy.History;
 import org.springframework.data.jpa.repository.JpaRepository;

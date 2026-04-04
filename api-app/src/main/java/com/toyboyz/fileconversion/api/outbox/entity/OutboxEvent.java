@@ -1,6 +1,6 @@
-package com.toyboyz.fileconversion.domain.outbox.entity;
+package com.toyboyz.fileconversion.api.outbox.entity;
 
-import com.toyboyz.fileconversion.domain.common.BaseTime;
+import com.toyboyz.fileconversion.api.global.BaseTime;
 import jakarta.persistence.*;
 import lombok.*;
 

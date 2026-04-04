@@ -1,4 +1,4 @@
-package com.toyboyz.fileconversion.domain.stats.repository;
+package com.toyboyz.fileconversion.api.stats.repository;
 
 import com.toyboyz.fileconversion.domain.stats.entity.ConversionStatsTotal;
 import org.springframework.data.jpa.repository.JpaRepository;

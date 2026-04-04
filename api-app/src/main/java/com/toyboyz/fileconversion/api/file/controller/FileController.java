@@ -4,7 +4,7 @@ import com.toyboyz.fileconversion.api.file.dto.request.UploadCompleteRequest;
 import com.toyboyz.fileconversion.api.file.dto.request.UploadInitRequest;
 import com.toyboyz.fileconversion.api.file.dto.response.UploadInitResponse;
 import com.toyboyz.fileconversion.api.file.service.FileService;
-import com.toyboyz.fileconversion.domain.history.entitiy.History;
+import com.toyboyz.fileconversion.api.history.entitiy.History;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;

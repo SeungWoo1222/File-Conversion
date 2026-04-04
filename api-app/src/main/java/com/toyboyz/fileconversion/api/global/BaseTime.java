@@ -1,4 +1,4 @@
-package com.toyboyz.fileconversion.domain.common;
+package com.toyboyz.fileconversion.api.global;
 
 import jakarta.persistence.*;
 import lombok.*;

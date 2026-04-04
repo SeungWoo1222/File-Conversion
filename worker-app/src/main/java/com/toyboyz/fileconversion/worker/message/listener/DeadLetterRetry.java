@@ -14,8 +14,6 @@ import com.toyboyz.fileconversion.worker.message.dto.ParserDTO;
 import com.toyboyz.fileconversion.worker.message.service.MessageService;
 import com.toyboyz.fileconversion.infra.rabbit.config.RabbitMQConfig;
 
-import java.time.LocalDateTime;
-
 @Slf4j
 @Component
 @RequiredArgsConstructor
