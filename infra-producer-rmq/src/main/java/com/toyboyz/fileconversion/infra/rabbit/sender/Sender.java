@@ -14,7 +14,7 @@ import java.util.Properties;
 
 @Component
 @RequiredArgsConstructor
-@EnableScheduling
+@EnableScheduling //#### error
 public class Sender {
 
     private final RabbitTemplate rabbitTemplate;

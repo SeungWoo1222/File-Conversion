@@ -1,9 +1,8 @@
 rootProject.name = 'file-conversion'
 
 include 'common-core'
-include 'file-domain'
+include 'infra-producer-rmq'
 include 'infra-s3'
 include 'infra-redis'
-include 'infra-rabbit'
 include 'api-app'
 include 'worker-app'

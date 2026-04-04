@@ -1,5 +1,8 @@
 dependencies {
     implementation project(':common-core')
 
+    implementation 'org.springframework.boot:spring-boot-starter-web'
     api 'org.springframework.boot:spring-boot-starter-data-redis'
+    testImplementation 'com.redis:testcontainers-redis:2.2.2'
+
 }

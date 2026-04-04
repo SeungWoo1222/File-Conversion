@@ -1,9 +1,9 @@
 package com.toyboyz.fileconversion.api.stats.service;
 
-import com.toyboyz.fileconversion.history.repository.HistoryRepository;
-import com.toyboyz.fileconversion.history.repository.HistoryStatsProjection;
-import com.toyboyz.fileconversion.stats.entity.ConversionStatsTotal;
-import com.toyboyz.fileconversion.stats.repository.ConversionStatsTotalRepository;
+import com.toyboyz.fileconversion.api.history.repository.HistoryRepository;
+import com.toyboyz.fileconversion.api.history.repository.HistoryStatsProjection;
+import com.toyboyz.fileconversion.api.stats.entity.ConversionStatsTotal;
+import com.toyboyz.fileconversion.api.stats.repository.ConversionStatsTotalRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;

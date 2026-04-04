@@ -1,5 +1,13 @@
-dependencies {
-    implementation project(':common-core')
+plugins {
+    id 'org.springframework.boot'
+}
 
-    api 'org.springframework.boot:spring-boot-starter-amqp'
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-amqp'
+
+}
+
+test {
+    useJUnitPlatform()
 }

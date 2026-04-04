@@ -8,8 +8,6 @@ COPY settings.gradle .
 COPY build.gradle .
 
 COPY common-core common-core
-COPY file-domain file-domain
-COPY infra-rabbit infra-rabbit
 COPY infra-redis infra-redis
 COPY infra-s3 infra-s3
 COPY worker-app worker-app

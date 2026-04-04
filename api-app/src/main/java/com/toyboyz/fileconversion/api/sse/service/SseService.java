@@ -1,6 +1,7 @@
 package com.toyboyz.fileconversion.api.sse.service;
 
-import com.toyboyz.fileconversion.history.entitiy.History;
+
+import com.toyboyz.fileconversion.api.history.entitiy.History;
 import com.toyboyz.fileconversion.api.history.service.HistoryService;
 import com.toyboyz.fileconversion.infra.redis.dto.SubDTO;
 import com.toyboyz.fileconversion.api.sse.config.SseEmitterRegistry;

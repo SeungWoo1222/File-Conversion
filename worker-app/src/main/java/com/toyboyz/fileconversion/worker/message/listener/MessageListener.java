@@ -2,6 +2,7 @@ package com.toyboyz.fileconversion.worker.message.listener;
 
 
 import com.rabbitmq.client.Channel;
+import com.toyboyz.fileconversion.worker.message.config.RabbitMQConsumerConfig;
 import lombok.RequiredArgsConstructor;
 
 import org.slf4j.Logger;
@@ -13,7 +14,7 @@ import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.retry.support.RetryTemplate;
 import org.springframework.stereotype.Component;
 import com.toyboyz.fileconversion.worker.message.service.MessageService;
-import com.toyboyz.fileconversion.infra.rabbit.config.RabbitMQConfig;
+
 
 import java.io.IOException;
 
@@ -30,7 +31,7 @@ public class MessageListener {
 
     //1.큐 연결
     //tag 객체가 메세지가 가진 고유번호를 가짐
-    @RabbitListener(queues = RabbitMQConfig.QUEUE_NAME, containerFactory = "rabbitListenerContainerFactory")
+    @RabbitListener(queues = RabbitMQConsumerConfig.QUEUE_NAME, containerFactory = "rabbitListenerContainerFactory")
     public void consume(String message,@Header(AmqpHeaders.DELIVERY_TAG) long tag,Channel channel) throws IOException {
         try {
 

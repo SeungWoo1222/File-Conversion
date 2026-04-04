@@ -3,6 +3,7 @@ package com.toyboyz.fileconversion.worker.message.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.toyboyz.fileconversion.infra.s3.service.S3StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -11,7 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.toyboyz.fileconversion.worker.conversion.service.ConversionService;
 import com.toyboyz.fileconversion.infra.redis.service.RedisProgressPublisher;
 import com.toyboyz.fileconversion.worker.message.dto.ParserDTO;
-import rmq.consumer.worker.s3.service.S3StorageService;
+
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -96,6 +97,7 @@ public class MessageService {
             JsonNode root = om.readTree(message);
 
             if (root.has("after") && root.path("after").has("payload")) {
+                log.info("error 발생 지점");
                 String payload = root.path("after").path("payload").asText();
                 return om.readValue(payload, ParserDTO.class);
             }
