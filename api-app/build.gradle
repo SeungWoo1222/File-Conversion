@@ -1,0 +1,50 @@
+plugins {
+    id 'org.springframework.boot'
+}
+
+dependencies {
+    implementation project(':common-core')
+    implementation project(':infra-s3')
+    implementation project(':infra-redis')
+
+
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+    runtimeOnly 'com.mysql:mysql-connector-j'
+}
+
+tasks.named('jar') {
+    enabled = false
+}
+
+sourceSets {
+    redisIntegrationTest {
+        java.srcDir 'src/redisIntegrationTest/java'
+        resources.srcDir 'src/redisIntegrationTest/resources'
+
+        compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
+        runtimeClasspath += output + compileClasspath
+    }
+}
+
+configurations {
+    redisIntegrationTestImplementation.extendsFrom testImplementation
+    redisIntegrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
+tasks.register('redisIntegrationTest', Test) {
+    description = 'Runs Redis integration tests'
+    group = 'verification'
+
+    testClassesDirs = sourceSets.redisIntegrationTest.output.classesDirs
+    classpath = sourceSets.redisIntegrationTest.runtimeClasspath
+
+    useJUnitPlatform()
+    shouldRunAfter tasks.named('test')
+}

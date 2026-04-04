@@ -8,16 +8,6 @@ build/
 application.yml
 #.properties
 application.properties
-.git
-.github
-.idea
-.gradle
-build
-out
-README.md
-docker-compose.yml
-prometheus.yml
-debezium/
 
 ### STS ###
 .apt_generated
