@@ -1,0 +1,9 @@
+dependencies {
+    implementation project(':common-core')
+
+    implementation 'org.springframework.boot:spring-boot-starter'
+
+    implementation 'software.amazon.awssdk:s3'
+    implementation 'software.amazon.awssdk:sso'
+    implementation 'software.amazon.awssdk:ssooidc'
+}

@@ -1,0 +1,7 @@
+services:
+  debezium:
+    image: quay.io/debezium/server:3.4
+    container_name: event-server
+    volumes:
+      - ./debezium/config:/debezium/config
+      - ./debezium/data:/debezium/data

@@ -1,0 +1,29 @@
+plugins {
+    id 'org.springframework.boot'
+}
+
+dependencies {
+    implementation project(':common-core')
+    implementation project(':file-domain')
+    implementation project(':infra-s3')
+    implementation project(':infra-redis')
+    implementation project(':infra-rabbit')
+
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.retry:spring-retry'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+    runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
+
+    implementation 'com.itextpdf:itext7-core:7.2.5'
+    implementation 'org.apache.pdfbox:pdfbox:2.0.27'
+
+    implementation 'org.docx4j:docx4j-export-fo:11.4.9'
+    implementation 'org.docx4j:docx4j-JAXB-ReferenceImpl:11.4.9'
+
+    implementation 'org.apache.poi:poi-ooxml:5.2.3'
+}
+
+tasks.named('jar') {
+    enabled = false
+}

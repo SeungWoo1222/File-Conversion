@@ -1,89 +1,57 @@
 plugins {
-    id 'java'
-    id 'org.springframework.boot' version '3.4.1' // 4.0.1에서 수정
-    id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.springframework.boot' version '3.4.1' apply false
+    id 'io.spring.dependency-management' version '1.1.7' apply false
 }
 
 group = 'com.toyboyz'
 version = '0.0.1-SNAPSHOT'
-description = 'fileConversion'
 
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
+ext {
+    springBootVersion = '3.4.1'
+    awsSdkVersion = '2.25.60'
+}
+
+allprojects {
+    group = rootProject.group
+    version = rootProject.version
+
+    repositories {
+        mavenCentral()
     }
 }
 
-sourceSets {
-    redisIntegrationTest {
-        java.srcDir 'src/redisIntegrationTest/java'
-        resources.srcDir 'src/redisIntegrationTest/resources'
+subprojects {
+    apply plugin: 'java-library'
+    apply plugin: 'io.spring.dependency-management'
 
-        compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
-        runtimeClasspath += output + compileClasspath
-    }
-}
-
-configurations {
-    compileOnly {
-        extendsFrom annotationProcessor
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(17)
+        }
     }
 
-    redisIntegrationTestImplementation.extendsFrom testImplementation
-    redisIntegrationTestRuntimeOnly.extendsFrom testRuntimeOnly
-}
+    dependencyManagement {
+        imports {
+            mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
+            mavenBom "software.amazon.awssdk:bom:${awsSdkVersion}"
+        }
+    }
 
-repositories {
-    mavenCentral()
-}
+    configurations {
+        compileOnly {
+            extendsFrom annotationProcessor
+        }
+    }
 
-dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.boot:spring-boot-starter-validation'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
-    // RabbitMQ
-    implementation 'org.springframework.boot:spring-boot-starter-amqp'
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-    implementation 'org.springframework.boot:spring-boot-starter-webflux' //webClient 사용 의존성
+    dependencies {
+        compileOnly 'org.projectlombok:lombok'
+        annotationProcessor 'org.projectlombok:lombok'
 
-    // aws
-    // s3
-    implementation platform('software.amazon.awssdk:bom:2.25.60')
-    implementation 'software.amazon.awssdk:s3'
-    // sso
-    implementation 'software.amazon.awssdk:sso'
-    implementation 'software.amazon.awssdk:ssooidc'
+        testImplementation 'org.springframework.boot:spring-boot-starter-test'
+        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    }
 
-    compileOnly 'org.projectlombok:lombok'
-    runtimeOnly 'com.mysql:mysql-connector-j'
-    annotationProcessor 'org.projectlombok:lombok'
-
-    // 테스트 의존성 정리
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-
-    // Testcontainers
-    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
-    testImplementation 'org.testcontainers:junit-jupiter'
-    testImplementation 'org.testcontainers:testcontainers'
-
-    // Redis Testcontainers
-    testImplementation 'com.redis:testcontainers-redis:2.2.2'
-}
-
-tasks.named('test') {
-    useJUnitPlatform()
-}
-
-tasks.register('redisIntegrationTest', Test) {
-    description = 'Runs Redis integration tests'
-    group = 'verification'
-
-    testClassesDirs = sourceSets.redisIntegrationTest.output.classesDirs
-    classpath = sourceSets.redisIntegrationTest.runtimeClasspath
-
-    useJUnitPlatform()
-    shouldRunAfter tasks.named('test')
+    tasks.withType(Test).configureEach {
+        useJUnitPlatform()
+    }
 }
