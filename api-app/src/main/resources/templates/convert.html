@@ -1,239 +1,22 @@
 <!DOCTYPE HTML>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Dark File Converter - Convert & Status</title>
+    <title>Dark File Converter - Image Only</title>
     <meta charset="UTF-8">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #0f172a;
-            background-image: radial-gradient(at 0% 0%, rgba(30, 58, 138, 0.5) 0, transparent 50%),
-                              radial-gradient(at 50% 0%, rgba(76, 29, 149, 0.4) 0, transparent 50%);
-            min-height: 100vh;
-            color: #f8fafc;
-            font-family: 'Inter', sans-serif;
-            padding: 50px 0;
-        }
 
-        .bright-title {
-            background: linear-gradient(to right, #ffffff, #a5b4fc, #c084fc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 2.2rem;
-            text-shadow: 0 0 20px rgba(129, 140, 248, 0.4);
-        }
-
-        .card {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 24px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            margin-bottom: 2rem;
-        }
-
-        .form-control, .form-select {
-            background-color: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #fff;
-            border-radius: 12px;
-        }
-
-        .btn-neon {
-            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-            border: none;
-            color: white;
-            font-weight: bold;
-            padding: 14px;
-            border-radius: 12px;
-            transition: all 0.3s ease;
-        }
-
-        .file-list-container {
-            background: rgba(15, 23, 42, 0.4);
-            border-radius: 12px;
-            max-height: 180px;
-            overflow-y: auto;
-        }
-
-        .table {
-            color: #cbd5e1;
-        }
-
-        .table-dark-custom {
-            background: rgba(15, 23, 42, 0.4);
-            border-radius: 15px;
-            overflow: hidden;
-        }
-
-        .update-highlight {
-            animation: flash 2s;
-        }
-
-        @keyframes flash {
-            0% { background-color: rgba(99, 102, 241, 0.3); }
-            100% { background-color: transparent; }
-        }
-
-        .download-link:hover {
-            color: #c084fc !important;
-            text-shadow: 0 0 8px rgba(192, 132, 252, 0.6);
-        }
-
-        .main-layout {
-            align-items: flex-start;
-        }
-
-        .left-panel {
-            max-width: 760px;
-        }
-
-        .right-panel {
-            max-width: 340px;
-        }
-
-        .stats-sidebar {
-            position: sticky;
-            top: 50px;
-        }
-
-        .server-badge {
-            display: inline-block;
-            margin-bottom: 0.7rem;
-            padding: 6px 10px;
-            border-radius: 999px;
-            background: rgba(99, 102, 241, 0.18);
-            border: 1px solid rgba(165, 180, 252, 0.18);
-            color: #c7d2fe;
-            font-size: 0.72rem;
-            font-weight: 800;
-            letter-spacing: 0.08em;
-        }
-
-        .stats-title {
-            color: #a5b4fc;
-            font-weight: 800;
-            margin-bottom: 1.2rem;
-            font-size: 1.4rem;
-        }
-
-        .stats-box {
-            background: rgba(15, 23, 42, 0.45);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 18px;
-            padding: 1.2rem 1.1rem;
-            margin-bottom: 1rem;
-        }
-
-        .stats-label {
-            font-size: 0.82rem;
-            font-weight: 700;
-            color: #a5b4fc;
-            margin-bottom: 0.45rem;
-            letter-spacing: 0.02em;
-        }
-
-        .stats-value {
-            font-size: 2rem;
-            font-weight: 800;
-            color: #f8fafc;
-            line-height: 1.2;
-        }
-
-        .stats-subtext {
-            color: #94a3b8;
-            font-size: 0.82rem;
-            margin-top: 0.35rem;
-            line-height: 1.5;
-        }
-
-        .helper-text {
-            color: #94a3b8;
-            font-size: 0.82rem;
-            margin-top: 0.5rem;
-        }
-
-        .selected-file-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-        }
-
-        .selected-file-info {
-            min-width: 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex: 1;
-        }
-
-        .selected-file-name {
-            color: #f8fafc;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 420px;
-        }
-
-        .selected-file-meta {
-            color: #94a3b8;
-            font-size: 0.78rem;
-            flex-shrink: 0;
-        }
-
-        .selected-file-remove-btn {
-            width: 28px;
-            height: 28px;
-            border: none;
-            border-radius: 999px;
-            background: rgba(239, 68, 68, 0.14);
-            color: #fca5a5;
-            font-size: 1rem;
-            font-weight: 700;
-            line-height: 1;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            flex-shrink: 0;
-        }
-
-        .selected-file-remove-btn:hover {
-            background: rgba(239, 68, 68, 0.24);
-            color: #fff;
-            transform: scale(1.05);
-        }
-
-        @media (max-width: 991.98px) {
-            .right-panel {
-                max-width: 760px;
-            }
-
-            .stats-sidebar {
-                position: static;
-                top: auto;
-            }
-
-            .stats-value {
-                font-size: 1.7rem;
-            }
-        }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
 
 <div class="container">
     <div class="row justify-content-center g-4 main-layout">
 
-        <!-- 왼쪽: 업로드 + 실시간 상태 -->
         <div class="col-lg-8 left-panel">
-
             <div class="card p-4">
                 <div class="text-center mb-4">
-                    <h2 class="fw-bold bright-title">File Converter</h2>
-                    <p class="text-secondary small">변환 요청 후 하단에서 실시간 상태를 확인하세요</p>
+                    <h2 class="fw-bold bright-title">Image Converter</h2>
+                    <p class="text-secondary small">이미지 파일을 선택하여 PDF로 변환하세요</p>
                 </div>
 
                 <form id="uploadForm">
@@ -245,8 +28,7 @@
                                 id="fileInput"
                                 name="files"
                                 multiple
-                                accept=".png,.jpg,.jpeg,.pdf,.doc,.docx"
-                                onchange="updateFileList()"
+                                accept=".png,.jpg,.jpeg,.gif,.bmp"
                                 required
                         >
                         <div class="helper-text">
@@ -258,9 +40,6 @@
                         <label class="form-label small text-uppercase fw-bold" style="color:#a5b4fc">선택된 파일 목록</label>
                         <div class="file-list-container p-2">
                             <ul id="fileList" class="list-group list-group-flush">
-                                <li class="list-group-item text-center border-0" style="background:transparent; color:#cbd5e1; font-weight:600;">
-                                    파일을 선택하세요
-                                </li>
                             </ul>
                         </div>
                     </div>
@@ -268,9 +47,7 @@
                     <div class="mb-4">
                         <label class="form-label small text-uppercase fw-bold" style="color:#a5b4fc">변환 포맷</label>
                         <select class="form-select" name="targetFormat" required>
-                            <option value="" disabled selected>포맷 선택</option>
                             <option value="PDF" selected>PDF</option>
-<!--                            <option th:each="format : ${formats}" th:value="${format}" th:text="${format}">PDF</option>-->
                         </select>
                     </div>
 
@@ -299,13 +76,11 @@
                             th:data-s3-filename="${history.s3FileName}">
 
                             <td th:text="${history.originalFile}" class="text-truncate">파일명</td>
-
                             <td class="status-cell text-center">
                                 <span class="badge"
                                       th:classappend="${history.status == '3' ? 'bg-success' : (history.status == '2' ? 'bg-primary' : 'bg-secondary')}"
                                       th:text="${history.status == '3' ? '완료' : (history.status == '2' ? '진행 중' : '대기 중')}">대기 중</span>
                             </td>
-
                             <td class="progress-cell" style="vertical-align: middle;">
                                 <div class="progress" style="height: 8px; background: rgba(255,255,255,0.1);">
                                     <div class="progress-bar progress-bar-striped progress-bar-animated bg-info"
@@ -315,18 +90,15 @@
                                 <small class="percent-text d-block text-center mt-1" style="font-size: 0.7rem;"
                                        th:text="${(history.percent ?: 0) + '%'}">0%</small>
                             </td>
-
                             <td class="message-cell small">
-                                <th:block
-                                        th:if="${history.status == '3' and history.convertedFile != null and !history.convertedFile.trim().isEmpty()}">
+                                <th:block th:if="${history.status == '3' and history.convertedFile != null and !history.convertedFile.trim().isEmpty()}">
                                     <span class="download-link"
-                                          th:onclick="handleDownloadRequest([[${history.convertedFile}]])"
+                                          th:onclick="window.handleDownloadRequest([[${history.convertedFile}]])"
                                           style="color: #a5b4fc; cursor: pointer; text-decoration: underline; font-weight: bold;">
                                         파일 다운로드
                                     </span>
                                 </th:block>
-                                <th:block
-                                        th:unless="${history.status == '3' and history.convertedFile != null and !history.convertedFile.trim().isEmpty()}">
+                                <th:block th:unless="${history.status == '3' and history.convertedFile != null and !history.convertedFile.trim().isEmpty()}">
                                     <span class="text-secondary" th:text="${history.message ?: '-'}">-</span>
                                 </th:block>
                             </td>
@@ -340,488 +112,24 @@
             </div>
         </div>
 
-        <!-- 오른쪽: 통계 전용 카드 -->
         <div class="col-lg-4 right-panel">
             <div class="card p-4 stats-sidebar">
                 <div class="stats-title">실시간 파일 변환 현황</div>
-
                 <div class="stats-box">
                     <div class="stats-label">전체 누적 변환 건수</div>
                     <div id="globalCompletedCount" class="stats-value">0</div>
-                    <div class="stats-subtext">
-                        현재 접속 사용자와 관계없이 서버 전체에서 누적된 변환 수입니다.
-                    </div>
+                    <div class="stats-subtext">서버 전체에서 누적된 변환 수입니다.</div>
                 </div>
-
                 <div class="stats-box mb-0">
                     <div class="stats-label">전체 누적 변환 용량</div>
                     <div id="globalCompletedBytes" class="stats-value">0 B</div>
-                    <div class="stats-subtext">
-                        서버에서 지금까지 처리한 파일 용량 합계입니다.
-                    </div>
+                    <div class="stats-subtext">서버에서 처리한 총 용량 합계입니다.</div>
                 </div>
             </div>
         </div>
-
     </div>
 </div>
 
-<script th:inline="javascript">
-
-    const MAX_FILE_COUNT = 3;
-    const MAX_FILE_SIZE_MB = 20;
-    const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
-    const ALLOWED_EXTENSIONS = ['png', 'jpg', 'jpeg', 'pdf', 'doc', 'docx'];
-
-    let selectedFiles = [];
-
-    async function handleDownloadRequest(key) {
-        if (!key || key.trim() === "") {
-            alert("아직 파일이 준비되지 않았습니다.");
-            return;
-        }
-
-        try {
-            const response = await fetch(`/api/file/download-url?key=${encodeURIComponent(key.trim())}`);
-
-            if (!response.ok) {
-                throw new Error(`서버 에러: ${response.status}`);
-            }
-
-            const downloadUrl = await response.text();
-
-            const link = document.createElement('a');
-            link.href = downloadUrl;
-            link.style.display = 'none';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-
-        } catch (error) {
-            console.error("다운로드 실패:", error);
-            alert("파일 다운로드 중 오류가 발생했습니다.");
-        }
-    }
-
-    function getOrCreateUuid() {
-        let uuid = localStorage.getItem('uuid');
-        if (!uuid) {
-            uuid = crypto.randomUUID();
-            localStorage.setItem('uuid', uuid);
-        }
-        return uuid;
-    }
-
-    const myUuid = getOrCreateUuid();
-    let fileEventSource = null;
-    let statsEventSource = null;
-
-    function initSse(uuid) {
-        console.log("📍 SSE 연결 중... UUID:", uuid);
-
-        if (fileEventSource) {
-            fileEventSource.close();
-        }
-
-        fileEventSource = new EventSource(`/api/sse/connect/${uuid}`);
-
-        fileEventSource.addEventListener('redis-caching-update', (event) => {
-            const data = JSON.parse(event.data);
-            console.log("🔔 상태 업데이트 수신:", data);
-            updateStatusUI(data);
-        });
-
-        fileEventSource.onopen = () => console.log("✅ 파일 SSE 연결 성공");
-
-        fileEventSource.onerror = () => {
-            console.warn("⚠️ 파일 SSE 연결 오류");
-            fileEventSource.close();
-
-            setTimeout(() => {
-                initSse(uuid);
-            }, 3000);
-        };
-    }
-
-    async function loadStatsSummary() {
-        try {
-            const response = await fetch('/api/stats/summary');
-
-            if (!response.ok) {
-                throw new Error(`stats summary load failed: ${response.status}`);
-            }
-
-            const summary = await response.json();
-            updateStatsSummaryUI(summary);
-        } catch (error) {
-            console.error("전역 통계 초기 조회 실패:", error);
-        }
-    }
-
-    function initStatsSse() {
-        if (statsEventSource) {
-            statsEventSource.close();
-        }
-
-        statsEventSource = new EventSource('/api/sse/stats');
-
-        statsEventSource.addEventListener('stats-summary-update', (event) => {
-            const summary = JSON.parse(event.data);
-            console.log("📊 전역 통계 업데이트 수신:", summary);
-            updateStatsSummaryUI(summary);
-        });
-
-        statsEventSource.onopen = () => console.log("✅ stats SSE 연결 성공");
-
-        statsEventSource.onerror = () => {
-            console.warn("⚠️ stats SSE 연결 오류");
-            statsEventSource.close();
-
-            setTimeout(() => {
-                initStatsSse();
-            }, 3000);
-        };
-    }
-
-    function updateStatsSummaryUI(summary) {
-        const countEl = document.getElementById('globalCompletedCount');
-        const bytesEl = document.getElementById('globalCompletedBytes');
-
-        if (countEl) {
-            countEl.textContent = Number(summary.completedCount || 0).toLocaleString();
-        }
-
-        if (bytesEl) {
-            bytesEl.textContent = formatBytes(summary.completedBytes || 0);
-        }
-    }
-
-    function formatBytes(bytes) {
-        const value = Number(bytes || 0);
-
-        if (value < 1024) return `${value} B`;
-        if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
-        if (value < 1024 * 1024 * 1024) return `${(value / (1024 * 1024)).toFixed(1)} MB`;
-        return `${(value / (1024 * 1024 * 1024)).toFixed(1)} GB`;
-    }
-
-    function getFileExtension(filename) {
-        const parts = filename.split('.');
-        return parts.length > 1 ? parts.pop().toLowerCase() : '';
-    }
-
-    function syncFileInputWithSelectedFiles() {
-        const input = document.getElementById('fileInput');
-        const dt = new DataTransfer();
-
-        selectedFiles.forEach(file => dt.items.add(file));
-        input.files = dt.files;
-    }
-
-    function validateFiles(files) {
-        const validFiles = [];
-        const errors = [];
-
-         if (files.length > MAX_FILE_COUNT) {
-        errors.push(`파일은 최대 ${MAX_FILE_COUNT}개까지 업로드할 수 있습니다.`);
-    }
-
-        files.slice(0, MAX_FILE_COUNT).forEach(file => {
-        const ext = getFileExtension(file.name);
-
-        if (!ALLOWED_EXTENSIONS.includes(ext)) {
-            errors.push(`${file.name} : 지원하지 않는 파일 형식입니다. (${ext || '확장자 없음'})`);
-            return;
-        }
-
-        if (file.size > MAX_FILE_SIZE_BYTES) {
-            errors.push(`${file.name} : 파일 크기가 ${MAX_FILE_SIZE_MB}MB를 초과했습니다.`);
-            return;
-        }
-
-        validFiles.push(file);
-    });
-
-
-        return { validFiles, errors };
-    }
-
-    function removeSelectedFile(index) {
-        selectedFiles.splice(index, 1);
-        syncFileInputWithSelectedFiles();
-        renderSelectedFileList();
-    }
-
-    function renderSelectedFileList() {
-        const list = document.getElementById('fileList');
-        list.innerHTML = '';
-
-        if (selectedFiles.length === 0) {
-            list.innerHTML = `
-                <li class="list-group-item text-muted text-center border-0" style="background:transparent">
-                    파일을 선택하세요
-                </li>
-            `;
-            return;
-        }
-
-        selectedFiles.forEach((file, index) => {
-            const li = document.createElement('li');
-            li.className = 'list-group-item border-0 py-2';
-            li.style.background = 'transparent';
-
-            li.innerHTML = `
-                <div class="selected-file-row">
-                    <div class="selected-file-info">
-                        <span class="selected-file-name">${file.name}</span>
-                        <span class="selected-file-meta">${formatBytes(file.size)}</span>
-                    </div>
-                    <button type="button"
-                            class="selected-file-remove-btn"
-                            onclick="removeSelectedFile(${index})"
-                            title="선택 목록에서 제거">
-                        ×
-                    </button>
-                </div>
-            `;
-
-            list.appendChild(li);
-        });
-    }
-
-    document.addEventListener('DOMContentLoaded', async () => {
-        initSse(myUuid);
-        await loadStatsSummary();
-        initStatsSse();
-        renderSelectedFileList();
-    });
-
-    function updateStatusUI(data) {
-        if (data.uuid !== myUuid) {
-            return;
-        }
-
-        const fileId = data.fileName || data.s3FileName;
-        const row = document.querySelector(`tr[data-s3-filename="${fileId}"]`);
-
-        if (row) {
-            console.log("✅ 매칭 성공:", fileId);
-
-            const statusCell = row.querySelector('.status-cell');
-            const progressBar = row.querySelector('.progress-bar');
-            const percentText = row.querySelector('.percent-text');
-            const messageCell = row.querySelector('.message-cell');
-
-            let statusText = "대기 중";
-            let badgeClass = "bg-secondary";
-
-            if (data.status === "2" || (typeof data.status === 'string' && data.status.includes("업데이트"))) {
-                statusText = "진행 중";
-                badgeClass = "bg-primary";
-            } else if (data.status === "3" || (typeof data.status === 'string' && data.status.includes("완료"))) {
-                statusText = "완료";
-                badgeClass = "bg-success";
-            }
-
-            if (statusCell) {
-                statusCell.innerHTML = `<span class="badge ${badgeClass}">${statusText}</span>`;
-            }
-
-            if (progressBar && data.percent !== undefined) {
-                const p = data.percent;
-                progressBar.style.setProperty('width', p + '%', 'important');
-
-                if (percentText) {
-                    percentText.innerText = p + "%";
-                }
-
-                if (p >= 100 || statusText === "완료") {
-                    progressBar.classList.remove('progress-bar-animated');
-                    progressBar.classList.replace('bg-info', 'bg-success');
-                }
-            }
-
-            if (messageCell) {
-                if (statusText === "완료") {
-                    const fileKey = data.convertedFile ? data.convertedFile.trim() : "";
-
-                    if (fileKey !== "") {
-                        messageCell.innerHTML = `
-                            <span class="download-link"
-                                  onclick="handleDownloadRequest('${fileKey}')"
-                                  style="color: #a5b4fc; cursor: pointer; text-decoration: underline; font-weight: bold;">
-                                파일 다운로드
-                            </span>
-                        `;
-                    } else {
-                        messageCell.innerHTML = `<span class="text-secondary">파일 준비 중...</span>`;
-                    }
-                } else {
-                    messageCell.innerHTML = `<span class="text-secondary">${data.status === "2" ? "처리 중..." : "-"}</span>`;
-                }
-            }
-
-            row.classList.add('update-highlight');
-            setTimeout(() => row.classList.remove('update-highlight'), 1000);
-        } else {
-            console.warn("❌ 매칭 실패: 화면에 해당 s3FileName 식별자를 가진 행이 없습니다 ->", fileId);
-        }
-    }
-
-    function updateFileList() {
-        const input = document.getElementById('fileInput');
-        const rawFiles = Array.from(input.files);
-        const { validFiles, errors } = validateFiles(rawFiles);
-
-        selectedFiles = validFiles;
-        syncFileInputWithSelectedFiles();
-
-        if (errors.length > 0) {
-            alert(errors.join('\n'));
-        }
-
-        renderSelectedFileList();
-    }
-
-    document.getElementById('uploadForm').addEventListener('submit', async function(e) {
-
-
-
-        e.preventDefault();
-
-        const btn = document.getElementById('submitBtn');
-        const files = [...selectedFiles];
-        const targetFormat = document.querySelector('select[name="targetFormat"]').value;
-
-        if (files.length === 0) {
-            alert("업로드 가능한 파일을 선택하세요.");
-            return;
-        }
-
-        if (files.length > MAX_FILE_COUNT) {
-    alert(`파일은 최대 ${MAX_FILE_COUNT}개까지 업로드할 수 있습니다.`);
-    return;
-}
-
-        if (!targetFormat) {
-            alert("변환 포맷을 선택하세요.");
-            return;
-        }
-
-        btn.disabled = true;
-        btn.innerText = "URL 발급 중...";
-
-        try {
-            const initReq = {
-                uuid: myUuid,
-                targetFormat: targetFormat,
-                files: files.map(f => ({
-                    filename: f.name,
-                    contentType: f.type || "application/octet-stream",
-                    size: f.size
-                }))
-            };
-
-            const initRes = await fetch('/file/upload-init', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(initReq)
-            });
-
-            if (!initRes.ok) throw new Error("upload-init 실패");
-            const initData = await initRes.json();
-
-            btn.innerText = "S3 업로드 중...";
-            for (let i = 0; i < initData.items.length; i++) {
-                const item = initData.items[i];
-                const f = files[i];
-
-                const putRes = await fetch(item.uploadUrl, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': f.type || "application/octet-stream" },
-                    body: f
-                });
-
-                if (!putRes.ok) throw new Error(`S3 업로드 실패: ${f.name}`);
-            }
-
-            btn.innerText = "서버 처리 중...";
-
-            const completeRes = await fetch('/file/upload-complete', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    uuid: myUuid,
-                    historyIds: initData.items.map(x => x.historyId)
-                })
-            });
-
-            if (!completeRes.ok) throw new Error("upload-complete 실패");
-
-            const text = await completeRes.text();
-            if (!text) {
-                location.reload();
-                return;
-            }
-
-            const newHistories = JSON.parse(text);
-
-            const emptyRow = document.getElementById('empty-row');
-            if (emptyRow) emptyRow.remove();
-
-            const tbody = document.getElementById('status-tbody');
-
-            newHistories.forEach(history => {
-                const row = document.createElement('tr');
-                row.className = 'history-row update-highlight';
-                row.setAttribute('data-id', history.historyId);
-                row.setAttribute('data-s3-filename', history.s3FileName);
-
-                let statusText = "대기 중";
-                let badgeClass = "bg-secondary";
-
-                if (history.status == '2') {
-                    statusText = "진행 중";
-                    badgeClass = "bg-primary";
-                } else if (history.status == '3') {
-                    statusText = "완료";
-                    badgeClass = "bg-success";
-                } else if (history.status == '9') {
-                    statusText = "실패";
-                    badgeCLass = "badge bg-danger";
-                }
-
-                row.innerHTML = `
-                    <td class="text-truncate" style="max-width: 150px;">${history.fileName || history.originalFile}</td>
-                    <td class="status-cell text-center">
-                        <span class="badge ${badgeClass}">${statusText}</span>
-                    </td>
-                    <td class="progress-cell" style="vertical-align: middle;">
-                        <div class="progress" style="height: 8px; background: rgba(255,255,255,0.1);">
-                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-info"
-                                 role="progressbar" style="width: 0%"></div>
-                        </div>
-                        <small class="percent-text d-block text-center mt-1" style="font-size: 0.7rem;">0%</small>
-                    </td>
-                    <td class="message-cell small text-secondary">${history.message || '-'}</td>
-                `;
-                tbody.prepend(row);
-            });
-
-            this.reset();
-            selectedFiles = [];
-            renderSelectedFileList();
-
-            btn.disabled = false;
-            btn.innerText = "변환 시작";
-
-        } catch (err) {
-            console.error("❌ 업로드 실패:", err);
-            btn.disabled = false;
-            btn.innerText = "변환 시작";
-            alert("업로드 처리 중 오류가 발생했습니다.");
-        }
-    });
-</script>
+<script th:src="@{/js/converter.js}"></script>
 </body>
 </html>
