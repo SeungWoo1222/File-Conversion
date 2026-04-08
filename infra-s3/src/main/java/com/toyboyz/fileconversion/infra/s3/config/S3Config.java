@@ -34,19 +34,20 @@ public class S3Config {
 //                .build();
 // }
 
-   @Bean
-   public S3Client s3Client(@Value("${s3.region}") String region) {
-       return S3Client.builder()
-               .region(Region.of(region))
-               .credentialsProvider(DefaultCredentialsProvider.create())
-               .build();
-   }
+    @Bean
+    public S3Client s3Client(@Value("${app.s3.region}") String region) {
+        return S3Client.builder()
+                .region(Region.of(region))
+                .credentialsProvider(DefaultCredentialsProvider.create())
+                .build();
+    }
 
-   @Bean
-   public S3Presigner s3Presigner(@Value("${s3.region}") String region) {
-       return S3Presigner.builder()
-               .region(Region.of(region))
-               .credentialsProvider(DefaultCredentialsProvider.create())
-               .build();
-   }
+
+    @Bean
+    public S3Presigner s3Presigner(@Value("${app.s3.region}") String region) {
+        return S3Presigner.builder()
+                .region(Region.of(region))
+                .credentialsProvider(DefaultCredentialsProvider.create())
+                .build();
+    }
 }

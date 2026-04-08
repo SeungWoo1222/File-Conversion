@@ -77,13 +77,9 @@ public class ConversionService {
             PdfWriter writer = new PdfWriter(outStream);
             PdfDocument pdfDoc = new PdfDocument(writer);
 
-            redisProgressPublisher.publishProg(historyId,uuid,filename,15,null,"2",0);
-
             // 이미지를 iText 전용 ImageData 타입으로 래핑
             ImageData data = ImageDataFactory.create(file);
             Image image = new Image(data);
-
-            redisProgressPublisher.publishProg(historyId,uuid,filename,30,null,"2",0);
 
             // 이미지 사이즈 추출 -> pdf 사이즈로 설정
             pdfDoc.setDefaultPageSize(new PageSize(image.getImageWidth(), image.getImageHeight()));
@@ -97,7 +93,6 @@ public class ConversionService {
 
             document.close();
 
-            redisProgressPublisher.publishProg(historyId,uuid,filename,70,null,"2",0);
             return outStream.toByteArray();
         } catch (Exception e) {
             throw new RuntimeException("PDF 변환 오류: " + e.getMessage());
