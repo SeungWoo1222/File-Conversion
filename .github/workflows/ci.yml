@@ -2,7 +2,7 @@ name: ci
 
 on:
   pull_request:
-    branches: ["develop"]
+    branches: ["dev/v2"]
 
 jobs:
   test:

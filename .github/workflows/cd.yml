@@ -2,7 +2,7 @@ name: cd
 
 on:
   push:
-    branches: ["develop"]
+    branches: ["dev/v2"]
 
 permissions:
   id-token: write

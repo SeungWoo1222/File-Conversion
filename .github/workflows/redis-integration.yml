@@ -2,7 +2,7 @@ name: redis-integration
 
 on:
   pull_request:
-    branches: ["develop"]
+    branches: ["dev/v2"]
     paths:
       - "src/main/java/com/toyboyz/fileconversion/infra/redis/**"
       - "src/redisIntegrationTest/**"
