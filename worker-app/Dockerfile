@@ -8,9 +8,12 @@ COPY settings.gradle .
 COPY build.gradle .
 
 COPY common-core common-core
+COPY infra-producer-rmq infra-producer-rmq
 COPY infra-redis infra-redis
 COPY infra-s3 infra-s3
+COPY api-app api-app
 COPY worker-app worker-app
+
 
 RUN chmod +x gradlew && ./gradlew :worker-app:bootJar -x test
 
