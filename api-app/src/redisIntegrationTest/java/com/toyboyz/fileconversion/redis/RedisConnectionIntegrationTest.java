@@ -1,6 +1,5 @@
 package com.toyboyz.fileconversion.redis;
 
-import com.redis.testcontainers.RedisContainer;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,7 +13,28 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
-@SpringBootTest
+@SpringBootTest(
+        properties = {
+                "spring.autoconfigure.exclude=" +
+                        "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration," +
+                        "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration," +
+                        "org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration",
+
+                "SLACK_WEBHOOK_URL=http://localhost/dummy",
+
+                "S3_BUCKET=test-bucket",
+                "AWS_REGION=ap-northeast-2",
+                "S3_PREFIX=uploads",
+                "S3_PRESIGN_TTL_SECONDS=900",
+
+                "SPRING_RABBITMQ_HOST=localhost",
+                "SPRING_RABBITMQ_PORT=5672",
+                "SPRING_RABBITMQ_USERNAME=test",
+                "SPRING_RABBITMQ_PASSWORD=test",
+
+                "SPRING_DATA_REDIS_DATABASE=0"
+        }
+)
 class RedisConnectionIntegrationTest {
 
     @Container
