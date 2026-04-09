@@ -14,5 +14,4 @@ services:
       retries: 30
 
 volumes:
-  rabbitmq_data:
   redis_data:

@@ -28,10 +28,10 @@ public class S3StorageService {
     private final S3Presigner s3Presigner;
     private final int day = 1;
 
-    @Value("${app.s3.bucket}")
+    @Value("${s3.bucket}")
     private String bucket;
 
-    @Value("${app.s3.presign-ttl-seconds:900}")
+    @Value("${s3.presign-ttl-seconds:900}")
     private long ttlSeconds;
 
     public String presignPutUrl(String key, String contentType) {
