@@ -12,6 +12,7 @@ on:
       - ".github/workflows/redis-integration.yml"
   workflow_dispatch: # 필요하면 수동실행도 가능
 
+
 jobs:
   redis-test:
     runs-on: ubuntu-latest
