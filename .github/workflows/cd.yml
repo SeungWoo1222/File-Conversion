@@ -12,6 +12,7 @@ env:
   AWS_REGION: ap-northeast-2
   AWS_ACCOUNT_ID: "188615717003"
   EC2_INSTANCE_ID: "i-04d273add12b3752e"
+  WORKER_EC2_INSTANCE_ID: "i-0cab3bc3dafa0aa12"
 
 jobs:
   deploy:
@@ -32,16 +33,25 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Build & Push API Docker image
-        id: build
+      - name: Generate image tag
+        id: meta
         run: |
           set -euo pipefail
 
           TAG="$(TZ=Asia/Seoul date +%Y%m%d-%H%M)-${GITHUB_RUN_NUMBER}"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
+          echo "TAG=$TAG"
+
+      - name: Build & Push API Docker image
+        id: build_api
+        run: |
+          set -euo pipefail
+
+          TAG="${{ steps.meta.outputs.tag }}"
           ECR_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/toyboyz-api"
-          echo "ECR_URI=$ECR_URI"
+
+          echo "API_ECR_URI=$ECR_URI"
           echo "TAG=$TAG"
 
           docker buildx build \
@@ -55,26 +65,72 @@ jobs:
         run: |
           set -euo pipefail
 
-          TAG="${{ steps.build.outputs.tag }}"
-          echo "Deploy tag: $TAG"
+          TAG="${{ steps.meta.outputs.tag }}"
+          echo "Deploy API tag: $TAG"
 
           CMD_ID=$(aws ssm send-command \
             --region "${AWS_REGION}" \
             --document-name "AWS-RunShellScript" \
-            --instance-ids "${EC2_INSTANCE_ID}" \
+            --instance-ids "${API_EC2_INSTANCE_ID}" \
             --parameters "{\"commands\":[\"sudo -u ssm-user -H bash /home/ssm-user/deploy/deploy.sh ${TAG}\"]}" \
             --query "Command.CommandId" \
             --output text)
 
-          echo "SSM CommandId: $CMD_ID"
+          echo "API SSM CommandId: $CMD_ID"
 
           aws ssm wait command-executed \
             --region "${AWS_REGION}" \
             --command-id "$CMD_ID" \
-            --instance-id "${EC2_INSTANCE_ID}"
+            --instance-id "${API_EC2_INSTANCE_ID}"
 
           aws ssm get-command-invocation \
             --region "${AWS_REGION}" \
             --command-id "$CMD_ID" \
-            --instance-id "${EC2_INSTANCE_ID}" \
+            --instance-id "${API_EC2_INSTANCE_ID}" \
+            --query "{Status:Status,StdOut:StandardOutputContent,StdErr:StandardErrorContent}"
+
+      - name: Build & Push Worker Docker image
+        id: build_worker
+        run: |
+          set -euo pipefail
+
+          TAG="${{ steps.meta.outputs.tag }}"
+          ECR_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/toyboyz-worker"
+
+          echo "WORKER_ECR_URI=$ECR_URI"
+          echo "TAG=$TAG"
+
+          docker buildx build \
+            --platform linux/amd64 \
+            -f worker-app/Dockerfile \
+            -t "${ECR_URI}:${TAG}" \
+            --push \
+            .
+
+      - name: Deploy Worker on EC2 via SSM Run Command
+        run: |
+          set -euo pipefail
+
+          TAG="${{ steps.meta.outputs.tag }}"
+          echo "Deploy Worker tag: $TAG"
+
+          CMD_ID=$(aws ssm send-command \
+            --region "${AWS_REGION}" \
+            --document-name "AWS-RunShellScript" \
+            --instance-ids "${WORKER_EC2_INSTANCE_ID}" \
+            --parameters "{\"commands\":[\"sudo -u ssm-user -H bash /home/ssm-user/deploy-worker-cdc/deploy-worker.sh ${TAG}\"]}" \
+            --query "Command.CommandId" \
+            --output text)
+
+          echo "Worker SSM CommandId: $CMD_ID"
+
+          aws ssm wait command-executed \
+            --region "${AWS_REGION}" \
+            --command-id "$CMD_ID" \
+            --instance-id "${WORKER_EC2_INSTANCE_ID}"
+
+          aws ssm get-command-invocation \
+            --region "${AWS_REGION}" \
+            --command-id "$CMD_ID" \
+            --instance-id "${WORKER_EC2_INSTANCE_ID}" \
             --query "{Status:Status,StdOut:StandardOutputContent,StdErr:StandardErrorContent}"
