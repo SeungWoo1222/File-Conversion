@@ -1,0 +1,19 @@
+name: redis-integration
+
+on:
+  workflow_dispatch:
+
+jobs:
+  redis-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Grant execute permission
+        run: chmod +x ./gradlew
+      - name: Run Redis integration tests
+        run: ./gradlew clean redisIntegrationTest

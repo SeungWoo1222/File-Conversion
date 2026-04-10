@@ -4,20 +4,6 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
-#.yml
-application.yml
-#.properties
-application.properties
-.git
-.github
-.idea
-.gradle
-build
-out
-README.md
-docker-compose.yml
-prometheus.yml
-debezium/
 
 ### STS ###
 .apt_generated
