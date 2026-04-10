@@ -1,0 +1,5 @@
+s3:
+  bucket: toyboyz-fileconv-bucket
+  region: ap-northeast-2
+  prefix: uploads
+  presign-ttl-seconds: 900   # 15분
