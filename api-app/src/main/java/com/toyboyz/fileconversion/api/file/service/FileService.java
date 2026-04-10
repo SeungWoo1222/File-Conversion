@@ -23,7 +23,7 @@ public class FileService {
     private final HistoryService historyService;
     private final S3StorageService s3StorageService;
 
-    @Value("${app.s3.prefix:uploads}")
+    @Value("${s3.prefix:uploads}")
     private String prefix;
 
     private static final Pattern SAFE_EXT = Pattern.compile("^[a-z0-9]{1,10}$");
