@@ -123,7 +123,7 @@ jobs:
             --region "${AWS_REGION}" \
             --document-name "AWS-RunShellScript" \
             --instance-ids "${WORKER_EC2_INSTANCE_ID}" \
-            --parameters "{\"commands\":[\"sudo -u ssm-user -H bash /home/ssm-user/deploy-worker-cdc/deploy-worker.sh ${TAG}\"]}" \
+            --parameters "{\"commands\":[\"set -euo pipefail\",\"echo '=== Disk before cleanup ==='\",\"df -h\",\"echo '=== Docker usage before cleanup ==='\",\"docker system df || true\",\"echo '=== Prune stopped containers ==='\",\"docker container prune -f || true\",\"echo '=== Prune unused images ==='\",\"docker image prune -af || true\",\"echo '=== Prune build cache ==='\",\"docker builder prune -af || true\",\"echo '=== Disk after cleanup ==='\",\"df -h\",\"echo '=== Docker usage after cleanup ==='\",\"docker system df || true\",\"sudo -u ssm-user -H bash /home/ssm-user/deploy-worker-cdc/deploy-worker.sh ${TAG}\"]}" \
             --query "Command.CommandId" \
             --output text)
 
