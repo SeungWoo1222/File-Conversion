@@ -78,16 +78,21 @@ jobs:
 
           echo "API SSM CommandId: $CMD_ID"
 
+          WAIT_EXIT=0
           aws ssm wait command-executed \
             --region "${AWS_REGION}" \
             --command-id "$CMD_ID" \
-            --instance-id "${API_EC2_INSTANCE_ID}"
+            --instance-id "${API_EC2_INSTANCE_ID}" || WAIT_EXIT=$?
 
           aws ssm get-command-invocation \
             --region "${AWS_REGION}" \
             --command-id "$CMD_ID" \
             --instance-id "${API_EC2_INSTANCE_ID}" \
             --query "{Status:Status,StdOut:StandardOutputContent,StdErr:StandardErrorContent}"
+
+          if [ "$WAIT_EXIT" -ne 0 ]; then
+            exit "$WAIT_EXIT"
+          fi
 
       - name: Build & Push Worker Docker image
         id: build_worker
@@ -124,13 +129,18 @@ jobs:
 
           echo "Worker SSM CommandId: $CMD_ID"
 
+          WAIT_EXIT=0
           aws ssm wait command-executed \
             --region "${AWS_REGION}" \
             --command-id "$CMD_ID" \
-            --instance-id "${WORKER_EC2_INSTANCE_ID}"
+            --instance-id "${WORKER_EC2_INSTANCE_ID}" || WAIT_EXIT=$?
 
           aws ssm get-command-invocation \
             --region "${AWS_REGION}" \
             --command-id "$CMD_ID" \
             --instance-id "${WORKER_EC2_INSTANCE_ID}" \
             --query "{Status:Status,StdOut:StandardOutputContent,StdErr:StandardErrorContent}"
+
+          if [ "$WAIT_EXIT" -ne 0 ]; then
+            exit "$WAIT_EXIT"
+          fi
