@@ -5,3 +5,5 @@ services:
     volumes:
       - ./debezium/config:/debezium/config
       - ./debezium/data:/debezium/data
+    env_file:
+      - ./debezium/config/application-local.properties

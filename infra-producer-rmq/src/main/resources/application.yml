@@ -1,10 +1,12 @@
-spring:
-  rabbitmq:
-    host: localhost
-    port: 5672
-    username: admin
-    password: admin
-  application:
-    name: cdc-event
 server:
   port: 8082
+spring:
+  application:
+    name: cdc-event
+  profiles:
+    active: local
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:admin}
+    password: ${RABBITMQ_PASS:admin}
