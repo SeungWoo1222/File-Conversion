@@ -6,6 +6,8 @@ scrape_configs:
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets: ['172.30.2.105:8081']
+        label:
+          application: 'worker'
 
   - job_name: 'rabbitmq'
     metrics_path: '/metrics'
