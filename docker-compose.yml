@@ -1,4 +1,7 @@
+version: '3.8'
+
 services:
+  # 1. 기존 워커 서버용 Redis
   redis:
     image: redis:7-alpine
     container_name: redis
@@ -12,6 +15,43 @@ services:
       interval: 5s
       timeout: 3s
       retries: 30
+    networks:
+      - monitoring-network
+
+  # 2. 프로메테우스 (경로 수정됨)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      # 현재 위치가 루트이므로 monitoring-stack 폴더 안의 파일을 지정합니다.
+      - ./monitoring-stack/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring-network
+    restart: always
+
+  # 3. 그라파나
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    networks:
+      - monitoring-network
+    restart: always
+
+networks:
+  monitoring-network:
+    driver: bridge
 
 volumes:
   redis_data:
+  prometheus_data:
+  grafana_data:
