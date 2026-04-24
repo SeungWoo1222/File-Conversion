@@ -67,9 +67,18 @@ logs/
 ### Debezium ###
 debezium-server/debezium/data/*.dat
 debezium-server/debezium/data/*.log
+debezium-server/debezium/config/application-local.properties
+debezium-server/docker-compose.override.yml
 !debezium-server/debezium/data/.gitkeep
 
 ### Redis / RabbitMQ runtime files ###
 dump.rdb
 appendonly.aof
 *.pid
+
+### Terraform ###
+.terraform/
+*.tfstate
+*.tfstate.backup
+terraform/.build/
+*.tfvars

@@ -12,7 +12,7 @@ env:
   AWS_REGION: ap-northeast-2
   AWS_ACCOUNT_ID: "188615717003"
   API_EC2_INSTANCE_ID: "i-04d273add12b3752e"
-  WORKER_EC2_INSTANCE_ID: "i-0cab3bc3dafa0aa12"
+  WORKER_ASG_NAME: "fileconversion-worker-asg"
 
 jobs:
   deploy:
@@ -112,35 +112,71 @@ jobs:
             --push \
             .
 
-      - name: Deploy Worker on EC2 via SSM Run Command
+      - name: Update Worker image tag in SSM Parameter Store
         run: |
           set -euo pipefail
 
           TAG="${{ steps.meta.outputs.tag }}"
-          echo "Deploy Worker tag: $TAG"
+          echo "Updating SSM parameter /fileconversion/worker/image-tag → $TAG"
+
+          aws ssm put-parameter \
+            --region "${AWS_REGION}" \
+            --name "/fileconversion/worker/image-tag" \
+            --value "${TAG}" \
+            --type String \
+            --overwrite
+
+      - name: Deploy Worker on ASG Fleet via SSM Run Command
+        run: |
+          set -euo pipefail
+
+          TAG="${{ steps.meta.outputs.tag }}"
+          echo "Deploy Worker tag: $TAG to ASG: $WORKER_ASG_NAME"
 
           CMD_ID=$(aws ssm send-command \
             --region "${AWS_REGION}" \
             --document-name "AWS-RunShellScript" \
-            --instance-ids "${WORKER_EC2_INSTANCE_ID}" \
+            --targets "Key=tag:aws:autoscaling:groupName,Values=${WORKER_ASG_NAME}" \
             --parameters "{\"commands\":[\"set -euo pipefail\",\"echo '=== Disk before cleanup ==='\",\"df -h\",\"echo '=== Docker usage before cleanup ==='\",\"docker system df || true\",\"echo '=== Prune stopped containers ==='\",\"docker container prune -f || true\",\"echo '=== Prune unused images ==='\",\"docker image prune -af || true\",\"echo '=== Prune build cache ==='\",\"docker builder prune -af || true\",\"echo '=== Disk after cleanup ==='\",\"df -h\",\"echo '=== Docker usage after cleanup ==='\",\"docker system df || true\",\"sudo -u ssm-user -H bash /home/ssm-user/deploy-worker-cdc/deploy-worker.sh ${TAG}\"]}" \
             --query "Command.CommandId" \
             --output text)
 
           echo "Worker SSM CommandId: $CMD_ID"
 
-          WAIT_EXIT=0
-          aws ssm wait command-executed \
-            --region "${AWS_REGION}" \
-            --command-id "$CMD_ID" \
-            --instance-id "${WORKER_EC2_INSTANCE_ID}" || WAIT_EXIT=$?
+          # Fleet 배포는 wait command-executed 미지원 → 직접 폴링
+          for i in $(seq 1 36); do
+            sleep 10
 
-          aws ssm get-command-invocation \
-            --region "${AWS_REGION}" \
-            --command-id "$CMD_ID" \
-            --instance-id "${WORKER_EC2_INSTANCE_ID}" \
-            --query "{Status:Status,StdOut:StandardOutputContent,StdErr:StandardErrorContent}"
+            INVOCATIONS=$(aws ssm list-command-invocations \
+              --region "${AWS_REGION}" \
+              --command-id "$CMD_ID" \
+              --query "CommandInvocations[].{InstanceId:InstanceId,Status:Status}" \
+              --output json)
 
-          if [ "$WAIT_EXIT" -ne 0 ]; then
-            exit "$WAIT_EXIT"
-          fi
+            TOTAL=$(echo "$INVOCATIONS" | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d))")
+            DONE=$(echo "$INVOCATIONS" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+print(sum(1 for x in d if x['Status'] in ('Success','Failed','Cancelled','TimedOut')))
+")
+            FAILED=$(echo "$INVOCATIONS" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+print(sum(1 for x in d if x['Status'] in ('Failed','Cancelled','TimedOut')))
+")
+
+            echo "[$i/36] Total=$TOTAL Done=$DONE Failed=$FAILED"
+
+            if [ "$TOTAL" -gt 0 ] && [ "$DONE" -eq "$TOTAL" ]; then
+              echo "$INVOCATIONS"
+              if [ "$FAILED" -gt 0 ]; then
+                echo "Worker deploy failed on $FAILED instance(s)"
+                exit 1
+              fi
+              echo "Worker deploy succeeded on all $TOTAL instance(s)"
+              exit 0
+            fi
+          done
+
+          echo "Timed out waiting for Worker deploy to complete"
+          exit 1
