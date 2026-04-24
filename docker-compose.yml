@@ -1,4 +1,7 @@
+version: '3.8'
+
 services:
+  # 1. 기존 워커 서버용 Redis
   redis:
     image: redis:7-alpine
     container_name: redis
@@ -12,6 +15,8 @@ services:
       interval: 5s
       timeout: 3s
       retries: 30
+    networks:
+      - monitoring-network
 
 volumes:
   redis_data:

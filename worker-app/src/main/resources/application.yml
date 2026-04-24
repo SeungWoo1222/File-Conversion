@@ -4,6 +4,8 @@ server:
 spring:
   lifecycle:
     timeout-per-shutdown-phase: 120s
+  profiles:
+    active: local
   rabbitmq:
     host: ${SPRING_RABBITMQ_HOST}
     port: ${SPRING_RABBITMQ_PORT}
@@ -14,7 +16,6 @@ spring:
       host: ${SPRING_DATA_REDIS_HOST}
       port: ${SPRING_DATA_REDIS_PORT}
       database: ${SPRING_DATA_REDIS_DATABASE}
-
 management:
   endpoints:
     web:
@@ -27,11 +28,12 @@ management:
   health:
     rabbit:
       enabled: true
-
+  metrics:
+    tags:
+      application: consumer
 slack:
   webhook:
     url: ${SLACK_WEBHOOK_URL}
-
 s3:
   bucket: toyboyz-fileconv-bucket
   region: ap-northeast-2
