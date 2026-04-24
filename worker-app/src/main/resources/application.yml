@@ -1,4 +1,9 @@
+server:
+  shutdown: graceful
+
 spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 120s
   rabbitmq:
     host: ${SPRING_RABBITMQ_HOST}
     port: ${SPRING_RABBITMQ_PORT}
