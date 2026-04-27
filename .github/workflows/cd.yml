@@ -154,16 +154,8 @@ jobs:
               --output json)
 
             TOTAL=$(echo "$INVOCATIONS" | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d))")
-            DONE=$(echo "$INVOCATIONS" | python3 -c "
-import sys, json
-d = json.load(sys.stdin)
-print(sum(1 for x in d if x['Status'] in ('Success','Failed','Cancelled','TimedOut')))
-")
-            FAILED=$(echo "$INVOCATIONS" | python3 -c "
-import sys, json
-d = json.load(sys.stdin)
-print(sum(1 for x in d if x['Status'] in ('Failed','Cancelled','TimedOut')))
-")
+            DONE=$(echo "$INVOCATIONS" | python3 -c "import sys,json; d=json.load(sys.stdin); print(sum(1 for x in d if x['Status'] in ('Success','Failed','Cancelled','TimedOut')))")
+            FAILED=$(echo "$INVOCATIONS" | python3 -c "import sys,json; d=json.load(sys.stdin); print(sum(1 for x in d if x['Status'] in ('Failed','Cancelled','TimedOut')))")
 
             echo "[$i/36] Total=$TOTAL Done=$DONE Failed=$FAILED"
 
