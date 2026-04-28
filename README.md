@@ -29,8 +29,7 @@
 ---
 ## 1.개발 환경
 <div align="center">
-<img width="1792" height="1063" alt="undefined (1)" src="https://github.com/user-attachments/assets/3df277bc-1de1-4769-806e-1f64b42f2d2e" />
-
+<img width="1792" height="1063" alt="undefined (1)" src="https://github.com/user-attachments/assets/1bdf15e4-afac-4277-ad67-a2f02c9df7e4" />
 </div>
 
 [Backend]
