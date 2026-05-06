@@ -118,8 +118,8 @@ public class RabbitMQConsumerConfig {
         SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
         factory.setConnectionFactory(connectionFactory);
 //        factory.setMessageConverter(messageConverter());
-        factory.setConcurrentConsumers(10);
-        factory.setMaxConcurrentConsumers(20);
+        factory.setConcurrentConsumers(1);
+        factory.setMaxConcurrentConsumers(1);
         factory.setAcknowledgeMode(AcknowledgeMode.MANUAL); // 수동 Ack 모드
         return factory;
     }

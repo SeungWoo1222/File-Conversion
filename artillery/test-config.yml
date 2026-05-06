@@ -7,7 +7,7 @@ config:
       arrivalRate: 5
       name: "예열 단계"
 
-    - duration: 120
+    - duration: 60
       arrivalRate: 5
       rampTo: 50
       name: "서서히 트래픽 증가"
