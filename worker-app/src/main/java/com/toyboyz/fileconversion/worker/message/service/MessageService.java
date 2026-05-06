@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.toyboyz.fileconversion.infra.s3.service.S3StorageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,11 +14,11 @@ import com.toyboyz.fileconversion.worker.conversion.service.ConversionService;
 import com.toyboyz.fileconversion.infra.redis.service.RedisProgressPublisher;
 import com.toyboyz.fileconversion.worker.message.dto.ParserDTO;
 
-
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -29,6 +30,13 @@ public class MessageService {
     private final S3StorageService s3StorageService;
     private final ConversionService conversionService;
     private final RedisProgressPublisher redisProgressPublisher;
+    private final StringRedisTemplate redisTemplate;
+
+    private static final String PROCESSING_KEY_PREFIX = "conversion:processing:";
+    private static final String COMPLETED_KEY_PREFIX  = "conversion:completed:";
+    private static final long   PROCESSING_TTL_MINUTES = 10L;
+    private static final long   COMPLETED_TTL_HOURS    = 24L;
+    private static final long   PROCESSING_TIMEOUT_MS  = 5 * 60 * 1000L; // 5분
 
     /**
      * [as is]
@@ -59,31 +67,56 @@ public class MessageService {
     //      3. 파일을 chunk 로 나눠서 aws sdk 의 TransferManager 를 통해 병렬 처리받아 전송한다?
 
     public void categorizer(String message) throws IOException {
+        ParserDTO parserDTO = parseMessage(message);
+        Long historyId = parserDTO.getHistoryId();
+
+        String processingKey = PROCESSING_KEY_PREFIX + historyId;
+        String completedKey  = COMPLETED_KEY_PREFIX  + historyId;
+
+        // 1. 이미 완료된 메시지면 중복 → skip
+        if (Boolean.TRUE.equals(redisTemplate.hasKey(completedKey))) {
+            log.info("[중복skip] 이미 완료된 메시지 historyId={}", historyId);
+            return;
+        }
+
+        // 2. processing key 확인 → 다른 Worker가 처리 중인지, 죽은 건지 판단
+        String processingVal = redisTemplate.opsForValue().get(processingKey);
+        if (processingVal != null) {
+            long startedAt = Long.parseLong(processingVal);
+            long elapsed   = System.currentTimeMillis() - startedAt;
+            if (elapsed < PROCESSING_TIMEOUT_MS) {
+                log.info("[중복skip] 다른 Worker 처리 중 historyId={}, elapsed={}ms", historyId, elapsed);
+                return;
+            }
+            log.info("[재처리] 앞 Worker가 {}ms 전에 시작 후 응답 없음. 재처리 진행 historyId={}", elapsed, historyId);
+        }
+
+        // 3. processing key 저장 (현재 timestamp, TTL 10분)
+        redisTemplate.opsForValue().set(processingKey, String.valueOf(System.currentTimeMillis()),
+                PROCESSING_TTL_MINUTES, TimeUnit.MINUTES);
+
         try {
-            //메세지 내부 문자열을 파싱해서 DTO 에 담아온다.
-            ParserDTO parserDTO = parseMessage(message);
-
-            //만약 이미 pdf 파일의 경우 15 % 에서 멈추는 현상 있음, 원본 즉시 리턴해주는 에러처리 필요함
-
             //s3 에서 파일 다운로드
             byte[] originFile = s3StorageService.downloadFile(parserDTO.getS3Key());
 
             //파일 변환
-            byte[] convertedFile = conversionService.imageToPdf(parserDTO,originFile);
-
+            byte[] convertedFile = conversionService.imageToPdf(parserDTO, originFile);
 
             //클라이언트에게 반환되는 파일명으로 파싱한 뒤 변환 완료 파일 업로드
             String convertedFilename = conversionService.convertedFilename(parserDTO);
-            s3StorageService.uploadFile(convertedFilename,convertedFile,parserDTO.getRequestFormat());
+            s3StorageService.uploadFile(convertedFilename, convertedFile, parserDTO.getRequestFormat());
+
+            // 4. 완료 key 저장 (TTL 24시간)
+            redisTemplate.opsForValue().set(completedKey, "1", COMPLETED_TTL_HOURS, TimeUnit.HOURS);
 
             //최종 진행률 100%
-            redisProgressPublisher.publishProg(parserDTO.getHistoryId(), parserDTO.getUuid(),parserDTO.getFileName(),100,convertedFilename,"3",convertedFile.length);
+            redisProgressPublisher.publishProg(parserDTO.getHistoryId(), parserDTO.getUuid(),
+                    parserDTO.getFileName(), 100, convertedFilename, "3", convertedFile.length);
 
-            //서버에서 변환 완료 후 즉시 전송되면 뷰단에서 프로그래스 바보다 먼저 상태가 "변환 완료" 로 바뀔 수 있음
-            //서버에서 변환 완료를 받으면 프로그래스 바를 전부 채우고 status 를 변환 완료 로 바꿔야함
-            //또는 90% 대까지 올린 후 100 수신 시 즉시 변환 완료 처리
             log.info("변환 + 업로드 완료");
         } catch (Exception e) {
+            // 실패 시 processing key 삭제 → 재시도 가능하도록
+            redisTemplate.delete(processingKey);
             log.info("Error : {}, message = {}", message, e.getMessage());
             throw e;
         }
