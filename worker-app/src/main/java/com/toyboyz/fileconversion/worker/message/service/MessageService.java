@@ -74,26 +74,26 @@ public class MessageService {
         String completedKey  = COMPLETED_KEY_PREFIX  + historyId;
 
         // 1. 이미 완료된 메시지면 중복 → skip
-        if (Boolean.TRUE.equals(redisTemplate.hasKey(completedKey))) {
-            log.info("[중복skip] 이미 완료된 메시지 historyId={}", historyId);
-            return;
-        }
+        // if (Boolean.TRUE.equals(redisTemplate.hasKey(completedKey))) {
+        //     log.info("[중복skip] 이미 완료된 메시지 historyId={}", historyId);
+        //     return;
+        // }
 
         // 2. processing key 확인 → 다른 Worker가 처리 중인지, 죽은 건지 판단
-        String processingVal = redisTemplate.opsForValue().get(processingKey);
-        if (processingVal != null) {
-            long startedAt = Long.parseLong(processingVal);
-            long elapsed   = System.currentTimeMillis() - startedAt;
-            if (elapsed < PROCESSING_TIMEOUT_MS) {
-                log.info("[중복skip] 다른 Worker 처리 중 historyId={}, elapsed={}ms", historyId, elapsed);
-                return;
-            }
-            log.info("[재처리] 앞 Worker가 {}ms 전에 시작 후 응답 없음. 재처리 진행 historyId={}", elapsed, historyId);
-        }
+        // String processingVal = redisTemplate.opsForValue().get(processingKey);
+        // if (processingVal != null) {
+        //     long startedAt = Long.parseLong(processingVal);
+        //     long elapsed   = System.currentTimeMillis() - startedAt;
+        //     if (elapsed < PROCESSING_TIMEOUT_MS) {
+        //         log.info("[중복skip] 다른 Worker 처리 중 historyId={}, elapsed={}ms", historyId, elapsed);
+        //         return;
+        //     }
+        //     log.info("[재처리] 앞 Worker가 {}ms 전에 시작 후 응답 없음. 재처리 진행 historyId={}", elapsed, historyId);
+        // }
 
         // 3. processing key 저장 (현재 timestamp, TTL 10분)
-        redisTemplate.opsForValue().set(processingKey, String.valueOf(System.currentTimeMillis()),
-                PROCESSING_TTL_MINUTES, TimeUnit.MINUTES);
+        // redisTemplate.opsForValue().set(processingKey, String.valueOf(System.currentTimeMillis()),
+        //         PROCESSING_TTL_MINUTES, TimeUnit.MINUTES);
 
         try {
             //s3 에서 파일 다운로드
@@ -107,7 +107,7 @@ public class MessageService {
             s3StorageService.uploadFile(convertedFilename, convertedFile, parserDTO.getRequestFormat());
 
             // 4. 완료 key 저장 (TTL 24시간)
-            redisTemplate.opsForValue().set(completedKey, "1", COMPLETED_TTL_HOURS, TimeUnit.HOURS);
+            // redisTemplate.opsForValue().set(completedKey, "1", COMPLETED_TTL_HOURS, TimeUnit.HOURS);
 
             //최종 진행률 100%
             redisProgressPublisher.publishProg(parserDTO.getHistoryId(), parserDTO.getUuid(),
