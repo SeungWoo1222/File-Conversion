@@ -2,8 +2,19 @@ config:
   target: "https://api.fileconversion.site"
   processor: "./processor.js"
   phases:
+
     - duration: 5
       arrivalRate: 5
+      name: "예열 단계"
+
+    - duration: 120
+      arrivalRate: 5
+      rampTo: 50
+      name: "서서히 트래픽 증가"
+
+    - duration: 100
+    - arrivalRate: 50
+      name: "피크 유지"
 
 scenarios:
   - name: "변환 요청 -> 변환 처리"
