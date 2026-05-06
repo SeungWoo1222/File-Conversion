@@ -49,11 +49,16 @@ public class RabbitMQConsumerConfig {
         return new TopicExchange(DLX);
     }
 
-//    //다이렉트(1대1),토픽(와일드카드로 포괄적인 전송),팬아웃(여러 큐에 동일한 메세지 발송)
-//    @Bean
-//    public Binding binding(Queue queue,TopicExchange exchange) {
-//        return BindingBuilder.bind(queue).to(exchange).with("cdc.event.#");
-//    }
+    //다이렉트(1대1),토픽(와일드카드로 포괄적인 전송),팬아웃(여러 큐에 동일한 메세지 발송)
+    @Bean
+    public Queue conversionQueue() {
+        return QueueBuilder.durable(QUEUE_NAME).build();
+    }
+
+    @Bean
+    public Binding binding(Queue conversionQueue, TopicExchange exchange) {
+        return BindingBuilder.bind(conversionQueue).to(exchange).with("cdc.event.#");
+    }
 
     //실패 시  명확하고 빠른 처리를 위해 DLQ 는 다이렉트 방식으로 구현해보겠음
     @Bean
