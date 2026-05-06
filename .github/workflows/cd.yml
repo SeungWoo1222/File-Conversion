@@ -11,7 +11,7 @@ permissions:
 env:
   AWS_REGION: ap-northeast-2
   AWS_ACCOUNT_ID: "188615717003"
-  API_EC2_INSTANCE_ID: "i-01248b69c66c690a8"
+  API_EC2_TAG_NAME: "fileconversion-api"
   WORKER_ASG_NAME: "fileconversion-worker-asg"
 
 jobs:
@@ -67,6 +67,21 @@ jobs:
 
           TAG="${{ steps.meta.outputs.tag }}"
           echo "Deploy API tag: $TAG"
+
+          # 태그(Name=fileconversion-api)로 실행 중인 인스턴스 ID를 동적으로 조회
+          API_EC2_INSTANCE_ID=$(aws ec2 describe-instances \
+            --region "${AWS_REGION}" \
+            --filters "Name=tag:Name,Values=${API_EC2_TAG_NAME}" \
+                      "Name=instance-state-name,Values=running" \
+            --query "Reservations[0].Instances[0].InstanceId" \
+            --output text)
+
+          if [ -z "$API_EC2_INSTANCE_ID" ] || [ "$API_EC2_INSTANCE_ID" = "None" ]; then
+            echo "Error: running instance not found for tag Name=${API_EC2_TAG_NAME}"
+            exit 1
+          fi
+
+          echo "API EC2 Instance ID: $API_EC2_INSTANCE_ID"
 
           CMD_ID=$(aws ssm send-command \
             --region "${AWS_REGION}" \
