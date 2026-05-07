@@ -36,15 +36,15 @@ public class Sender {
     }
 
 
-
     @Scheduled(fixedRate = 30000)
     private void sendKeepAlive() {
         //커넥션된 컨슈머가 있을 때만 보냄
-        Properties properties = rabbitAdmin.getQueueProperties(RabbitMQConfig.QUEUE_NAME);
-        if (properties != null) {
-            int consumerCnt = (Integer) properties.get(RabbitAdmin.QUEUE_CONSUMER_COUNT);
+        Properties trueConsumer = rabbitAdmin.getQueueProperties(RabbitMQConfig.QUEUE_NAME);
+        if (trueConsumer != null) {
+            int consumerCnt = (Integer) trueConsumer.get(RabbitAdmin.QUEUE_CONSUMER_COUNT);
             if (consumerCnt > 0) {
                 String heartbeatMsg = "Connection_Keep_Alive : (" + LocalDateTime.now() + ")";
+
                 rabbitTemplate.convertAndSend(
                         RabbitMQConfig.EXCHANGE_NAME,
                         RabbitMQConfig.ROUTING_KEY,
