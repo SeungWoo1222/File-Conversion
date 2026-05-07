@@ -21,6 +21,10 @@ public class RabbitMQConsumerConfig {
     private String password;
 
 
+    //RabbitMQ 상수 설정
+    public static final String EXCHANGE_NAME = "cdc.event.exchange";
+    public static final String QUEUE_NAME = "cdc.event.new_conversion";
+
     public static final String DLQ = "deadLetterQueue";
     public static final String DLX = "deadLetterExchange";
     public static final String DEAD_LETTER_ROUTING_KEY = "dead.letter";
