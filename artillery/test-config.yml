@@ -5,6 +5,9 @@ config:
     - duration: 5
       arrivalRate: 5
       name: "예열 단계"
+    - duration: 30
+      arrivalRate: 10
+      name: "기본 트래픽"
 
 scenarios:
   - name: "변환 요청 + history"
