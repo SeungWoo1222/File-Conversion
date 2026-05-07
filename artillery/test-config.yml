@@ -5,7 +5,7 @@ config:
     - duration: 5
       arrivalRate: 5
       name: "예열 단계"
-    - duration: 30
+    - duration: 60
       arrivalRate: 10
       name: "기본 트래픽"
 

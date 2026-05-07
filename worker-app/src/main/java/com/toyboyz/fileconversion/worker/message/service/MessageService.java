@@ -57,8 +57,6 @@ public class MessageService {
     //해결책  1.로컬망이라 aws 내부 망보다 느릴 수 있으므로 배포 후 모니터링 해볼 것 (+ S3 전용 통로(VPC Endpoint))
     //      2.메모리 버퍼 최적화
     //      3. 파일을 chunk 로 나눠서 aws sdk 의 TransferManager 를 통해 병렬 처리받아 전송한다?
-
-
     public void categorizer(String message) throws IOException {
         try {
             //메세지 내부 문자열을 파싱해서 DTO 에 담아온다.
@@ -71,7 +69,6 @@ public class MessageService {
 
             //파일 변환
             byte[] convertedFile = conversionService.imageToPdf(parserDTO,originFile);
-
 
             //클라이언트에게 반환되는 파일명으로 파싱한 뒤 변환 완료 파일 업로드
             String convertedFilename = conversionService.convertedFilename(parserDTO);
