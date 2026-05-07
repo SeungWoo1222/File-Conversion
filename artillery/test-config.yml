@@ -1,22 +1,13 @@
 config:
-  target: "http://localhost:8080"
+  target: "https://api.fileconversion.site"
   processor: "./processor.js"
   phases:
-
     - duration: 5
       arrivalRate: 5
       name: "예열 단계"
 
-    - duration: 30
-      arrivalRate: 10
-      name: "서서히 트래픽 증가"
-
-#    - duration: 100
-#    - arrivalRate: 50
-#      name: "피크 유지"
-
 scenarios:
-  - name: "변환 요청 + history
+  - name: "변환 요청 + history"
     flow:
       - post:
           url: "/file/upload-init"
@@ -36,7 +27,6 @@ scenarios:
           expect:
             - statusCode: 200
 
-  - name: "업로드
       - put:
           url: "{{ capturedUploadUrl }}"
           body: "test content"
@@ -45,7 +35,6 @@ scenarios:
           expect:
             - statusCode: 200
 
-  - name: "outbox 생성
       - post:
           url: "/file/upload-complete"
           json:
