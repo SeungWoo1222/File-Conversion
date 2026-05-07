@@ -12,7 +12,3 @@ output "route53_hosted_zone_id" {
   value       = aws_route53_zone.internal.zone_id
 }
 
-output "asg_dns_updater_arn" {
-  description = "Worker ASG DNS 자동 업데이트 Lambda ARN"
-  value       = aws_lambda_function.asg_dns_updater.arn
-}

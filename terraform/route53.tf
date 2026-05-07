@@ -20,12 +20,12 @@ resource "aws_route53_record" "rmq" {
   records = [var.rmq_private_ip]
 }
 
-# Worker EC2 Redis - Worker ASG가 교체될 때 Lambda가 자동 업데이트
+# Redis - rmq-ec2에서 실행 (ASG 밖 고정 EC2, Worker 교체와 무관)
 resource "aws_route53_record" "redis" {
   zone_id = aws_route53_zone.internal.zone_id
   name    = "redis.internal"
   type    = "A"
   ttl     = 30
 
-  records = [var.worker_private_ip]
+  records = [var.rmq_private_ip]
 }
