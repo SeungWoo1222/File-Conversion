@@ -14,6 +14,8 @@ public class S3Controller {
 
     @GetMapping("/api/file/download-url")
     public String downloadFile(@RequestParam String key) {
+
+
         return s3StorageService.presignGetUrl(key);
     }
 }

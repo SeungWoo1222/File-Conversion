@@ -27,3 +27,8 @@ variable "worker_asg_name" {
   type    = string
   default = "fileconversion-worker-asg"
 }
+
+variable "rmq_private_ip" {
+  type        = string
+  description = "rmq-ec2 인스턴스의 Private IP (rmq.internal, redis.internal A 레코드 공통 사용)"
+}

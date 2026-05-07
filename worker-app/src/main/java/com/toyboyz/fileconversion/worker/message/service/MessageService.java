@@ -30,8 +30,6 @@ public class MessageService {
     private final S3StorageService s3StorageService;
     private final ConversionService conversionService;
     private final RedisProgressPublisher redisProgressPublisher;
-    private final StringRedisTemplate redisTemplate;
-
 
     /**
      * [as is]
@@ -58,11 +56,15 @@ public class MessageService {
     //이 과정에서 동시 처리수를 늘려서 메세지를 가져왔는데 ack 처리를 못받아서 unack 로 메세지가 대기되는 경우 발생
     //해결책  1.로컬망이라 aws 내부 망보다 느릴 수 있으므로 배포 후 모니터링 해볼 것 (+ S3 전용 통로(VPC Endpoint))
     //      2.메모리 버퍼 최적화
-    //      3.파일을 chunk 로 나눠서 aws sdk 의 TransferManager 를 통해 병렬 처리받아 전송한다?
+    //      3. 파일을 chunk 로 나눠서 aws sdk 의 TransferManager 를 통해 병렬 처리받아 전송한다?
+
+
     public void categorizer(String message) throws IOException {
         try {
             //메세지 내부 문자열을 파싱해서 DTO 에 담아온다.
             ParserDTO parserDTO = parseMessage(message);
+
+            //만약 이미 pdf 파일의 경우 15 % 에서 멈추는 현상 있음, 원본 즉시 리턴해주는 에러처리 필요함
 
             //s3 에서 파일 다운로드
             byte[] originFile = s3StorageService.downloadFile(parserDTO.getS3Key());
