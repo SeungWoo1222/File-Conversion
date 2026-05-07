@@ -51,7 +51,6 @@ public class MessageService {
     //[to be] cdc
 
 
-
     //03.30 현재 대기 메세지: 5000 의 큐를 소비하는 속도는 적정하나 (cpu 40% 더 올릴 수 있음)
     //s3 와의 네트워크 접근성이 너무 떨어짐 s3 (다운로드,업로드)를 기다리느라 cpu 가 놀고 있는 수준
     //이 과정에서 동시 처리수를 늘려서 메세지를 가져왔는데 ack 처리를 못받아서 unack 로 메세지가 대기되는 경우 발생
@@ -93,17 +92,15 @@ public class MessageService {
 
 
 
+
     //넘어온 payload를 ParserDTO 로 파싱한 뒤 리턴
     public ParserDTO parseMessage(String message) {
         try {
             JsonNode root = om.readTree(message);
-
             if (root.has("after") && root.path("after").has("payload")) {
-                log.info("error 발생 지점");
                 String payload = root.path("after").path("payload").asText();
                 return om.readValue(payload, ParserDTO.class);
             }
-
             return om.treeToValue(root, ParserDTO.class);
         } catch (Exception e) {
             log.error("Message parsing failed. rawMessage={}", message, e);

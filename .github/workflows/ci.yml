@@ -3,6 +3,8 @@ name: ci
 on:
   pull_request:
     branches: ["dev/v2"]
+    paths-ignore:
+      - 'monitoring-stack/**'
 
 jobs:
   test:
