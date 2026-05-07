@@ -27,3 +27,13 @@ variable "worker_asg_name" {
   type    = string
   default = "fileconversion-worker-asg"
 }
+
+variable "rmq_private_ip" {
+  type        = string
+  description = "rmq-ec2 인스턴스의 Private IP (rmq.internal A 레코드)"
+}
+
+variable "worker_private_ip" {
+  type        = string
+  description = "현재 Worker EC2 인스턴스의 Private IP (redis.internal 초기값, 이후 Lambda가 자동 갱신)"
+}
