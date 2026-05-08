@@ -31,6 +31,8 @@ public class MessageService {
     private final ConversionService conversionService;
     private final RedisProgressPublisher redisProgressPublisher;
 
+
+
     /**
      * [as is]
      * 2~5초 이내로 db 에서 저장된 시간순으로 정렬한 뒤 1000(n)개 씩 가져온다.
