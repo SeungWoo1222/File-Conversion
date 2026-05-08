@@ -46,10 +46,6 @@ public class MessageService {
      */
 
 
-    //3-1 저장된 메세지를 가져온다
-    //[as is] polling
-    //[to be] cdc
-
 
     //03.30 현재 대기 메세지: 5000 의 큐를 소비하는 속도는 적정하나 (cpu 40% 더 올릴 수 있음)
     //s3 와의 네트워크 접근성이 너무 떨어짐 s3 (다운로드,업로드)를 기다리느라 cpu 가 놀고 있는 수준
@@ -57,8 +53,6 @@ public class MessageService {
     //해결책  1.로컬망이라 aws 내부 망보다 느릴 수 있으므로 배포 후 모니터링 해볼 것 (+ S3 전용 통로(VPC Endpoint))
     //      2.메모리 버퍼 최적화
     //      3. 파일을 chunk 로 나눠서 aws sdk 의 TransferManager 를 통해 병렬 처리받아 전송한다?
-
-
     public void categorizer(String message) throws IOException {
         try {
             //메세지 내부 문자열을 파싱해서 DTO 에 담아온다.
@@ -67,32 +61,14 @@ public class MessageService {
             //만약 이미 pdf 파일의 경우 15 % 에서 멈추는 현상 있음, 원본 즉시 리턴해주는 에러처리 필요함
 
             //s3 에서 파일 다운로드
-            long startDownload = System.currentTimeMillis();
             byte[] originFile = s3StorageService.downloadFile(parserDTO.getS3Key());
-            long downloadMs = System.currentTimeMillis() - startDownload;
 
             //파일 변환
-            long startConversion = System.currentTimeMillis();
             byte[] convertedFile = conversionService.imageToPdf(parserDTO, originFile);
-            long conversionMs = System.currentTimeMillis() - startConversion;
 
             //클라이언트에게 반환되는 파일명으로 파싱한 뒤 변환 완료 파일 업로드
             String convertedFilename = conversionService.convertedFilename(parserDTO);
-            long startUpload = System.currentTimeMillis();
             s3StorageService.uploadFile(convertedFilename, convertedFile, parserDTO.getRequestFormat());
-            long uploadMs = System.currentTimeMillis() - startUpload;
-
-            int originKb = originFile.length / 1024;
-            int convertedKb = convertedFile.length / 1024;
-            long downloadKbps = downloadMs > 0 ? (originKb * 1000L / downloadMs) : 0;
-            long uploadKbps = uploadMs > 0 ? (convertedKb * 1000L / uploadMs) : 0;
-
-            log.info("[PERF] file={} originSize={}KB convertedSize={}KB | download={}ms({}KB/s) conversion={}ms upload={}ms({}KB/s) total={}ms",
-                    parserDTO.getFileName(), originKb, convertedKb,
-                    downloadMs, downloadKbps,
-                    conversionMs,
-                    uploadMs, uploadKbps,
-                    downloadMs + conversionMs + uploadMs);
 
             //최종 진행률 100%
             redisProgressPublisher.publishProg(parserDTO.getHistoryId(), parserDTO.getUuid(), parserDTO.getFileName(), 100, convertedFilename, "3", convertedFile.length);
