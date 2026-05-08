@@ -97,6 +97,10 @@ public class MessageService {
             //최종 진행률 100%
             redisProgressPublisher.publishProg(parserDTO.getHistoryId(), parserDTO.getUuid(), parserDTO.getFileName(), 100, convertedFilename, "3", convertedFile.length);
 
+            //서버에서 변환 완료 후 즉시 전송되면 뷰단에서 프로그래스 바보다 먼저 상태가 "변환 완료" 로 바뀔 수 있음
+            //서버에서 변환 완료를 받으면 프로그래스 바를 전부 채우고 status 를 변환 완료 로 바꿔야함
+            //또는 90% 대까지 올린 후 100 수신 시 즉시 변환 완료 처리
+            log.info("변환 + 업로드 완료");
         } catch (Exception e) {
             log.info("Error : {}, message = {}", message, e.getMessage());
             throw e;
