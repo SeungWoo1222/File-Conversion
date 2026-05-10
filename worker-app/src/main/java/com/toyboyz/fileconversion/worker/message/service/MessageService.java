@@ -60,14 +60,17 @@ public class MessageService {
 
             //만약 이미 pdf 파일의 경우 15 % 에서 멈추는 현상 있음, 원본 즉시 리턴해주는 에러처리 필요함
 
+            //s3 에서 파일 다운로드
             long startDownload = System.currentTimeMillis();
             byte[] originFile = s3StorageService.downloadFile(parserDTO.getS3Key());
             long downloadMs = System.currentTimeMillis() - startDownload;
 
+            //파일 변환
             long startConversion = System.currentTimeMillis();
             byte[] convertedFile = conversionService.imageToPdf(parserDTO, originFile);
             long conversionMs = System.currentTimeMillis() - startConversion;
 
+            //클라이언트에게 반환되는 파일명으로 파싱한 뒤 변환 완료 파일 업로드
             String convertedFilename = conversionService.convertedFilename(parserDTO);
             long startUpload = System.currentTimeMillis();
             s3StorageService.uploadFile(convertedFilename, convertedFile, parserDTO.getRequestFormat());
@@ -82,7 +85,12 @@ public class MessageService {
                     downloadMs, downloadKbps, conversionMs, uploadMs, uploadKbps,
                     downloadMs + conversionMs + uploadMs);
 
+            //최종 진행률 100%
             redisProgressPublisher.publishProg(parserDTO.getHistoryId(), parserDTO.getUuid(), parserDTO.getFileName(), 100, convertedFilename, "3", convertedFile.length);
+
+            //서버에서 변환 완료 후 즉시 전송되면 뷰단에서 프로그래스 바보다 먼저 상태가 "변환 완료" 로 바뀔 수 있음
+            //서버에서 변환 완료를 받으면 프로그래스 바를 전부 채우고 status 를 변환 완료 로 바꿔야함
+            //또는 90% 대까지 올린 후 100 수신 시 즉시 변환 완료 처리
             log.info("변환 + 업로드 완료");
         } catch (Exception e) {
             log.info("Error : {}, message = {}", message, e.getMessage());
