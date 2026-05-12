@@ -30,8 +30,8 @@ scenarios:
             targetFormat: "PDF"
             files:
               - filename: "{{ filename }}"
-                contentType: "image/jpeg"
-                size: "{{ imageSize }}"  # ★ 고정값 대신 실제 이미지 사이즈 사용
+                contentType: "image/png"
+                size: "{{ imageSize }}"
           capture:
             - json: "$.items[0].uploadUrl"
               as: "capturedUploadUrl"
@@ -42,9 +42,9 @@ scenarios:
 
       - put:
           url: "{{ capturedUploadUrl }}"
-          body: "{{ realImageBuffer }}"  # ★ "test content" 대신 실제 이미지 버퍼를 전송
+          beforeRequest: "setImageBody"
           headers:
-            Content-Type: "image/jpeg"
+            Content-Type: "image/png"
           expect:
             - statusCode: 200
 
