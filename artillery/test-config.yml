@@ -1,3 +1,63 @@
+#config:
+#  target: "https://api.fileconversion.site"
+#  processor: "./processor.js"
+#  phases:
+#    - duration: 30
+#      arrivalRate: 1
+#      name: "1단계: Warm Up(초당 1명)"
+#
+#    - duration: 60
+#      arrivalRate: 1
+#      rampTo: 10
+#      name: "2단계: 점진적 기본 트래픽 (1명부터 시작해서 10명까지)"
+#
+#    - duration: 120
+#      arrivalRate: 5
+#      name: "3단계: 긴 지속적인 트래픽 (초당 5명)"
+#
+#    - duration: 30
+#      arrivalRate: 20
+#      name: "4단계: 한계 돌파 스트레스 테스트 (초당 20명)"
+#
+#scenarios:
+#  - name: "변환 "
+#    flow:
+#      - post:
+#          url: "/file/upload-init"
+#          beforeRequest: "generateRandomData"
+#          json:
+#            uuid: "{{ $uuid }}"
+#            targetFormat: "PDF"
+#            files:
+#              - filename: "{{ filename }}"
+#                contentType: "image/jpeg"
+#                size: "{{ imageSize }}"  # ★ 고정값 대신 실제 이미지 사이즈 사용
+#          capture:
+#            - json: "$.items[0].uploadUrl"
+#              as: "capturedUploadUrl"
+#            - json: "$.items[0].historyId"
+#              as: "capturedHistoryId"
+#          expect:
+#            - statusCode: 200
+#
+#      - put:
+#          url: "{{ capturedUploadUrl }}"
+#          body: "{{ realImageBuffer }}"  # ★ "test content" 대신 실제 이미지 버퍼를 전송
+#          headers:
+#            Content-Type: "image/jpeg"
+#          expect:
+#            - statusCode: 200
+#
+#      - post:
+#          url: "/file/upload-complete"
+#          json:
+#            uuid: "{{ $uuid }}"
+#            historyIds: ["{{ capturedHistoryId }}"]
+#          expect:
+#            - statusCode: 200
+
+
+
 config:
   target: "https://api.fileconversion.site"
   processor: "./processor.js"
