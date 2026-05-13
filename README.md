@@ -111,7 +111,7 @@
   - #### 채택 이유
     - 단계별 고부하 상황을 기획하여 시나리오를 작성할 수 있으며 API 서버의 생존성과 메시지 발행 신뢰성 검증 및 유저 플로우에 따른 통합 테스트를 진행 가능.
   - #### 사용 사례 및 효율성
-     - 실제 운영환경과 유사하게 총 4단계(부하테스트 예열, 점진적 증가, 평균 운영 부하, 트래픽 스파이크) 로 구성하여 진행.
+     - 실제 운영환경과 유사하게 총 5단계(Warm Up ~ Traffic Spike0) 로 구성하여 진행.
      - 디비지움이 메시지 큐로 정상적으로 메시지를 전송하는지 검증.
 ---
 
@@ -153,30 +153,32 @@
 ## 김주원
  - ### Backend
  - #### 서버 아키텍처 설계(Event Driven Architecture)
-   - 기존 Monolithic 구조에서 강결합된 관심사를 분리 및 메시지 큐 구조를 도입하여 EDA 구조 설계.
-   - 관심사 별 모노 레포 전략을 통해 깃 버전 관리.
+   - 기존 모놀리식에서 강결합된 관심사를 분리 및 메시지 큐 & CDC 를 도입하여 EDA 구조 설계.
+   - 관심사 분리를 통해 성능 향상을 위한 확장이 용이한 구조로 개선
+   - 각각의 독립적인 서버 구조로 인해 장애 격리에 특화
  - #### 이미지 변환 처리(iText)
    - 파일 메타 데이터를 기반으로 S3 에서 PNG,JPG(JPEG),GIF,BMP 의 파일을 내려받아 스트림 기반의 변환 처리 구현.
  - #### RabbitMQ(Producer,Consumer,DeadLetterQueue + Slack)
    - 변환 대상 파일의 메타데이터를 담는 메인 Queue 구성과 작업 실패 시 관리자 알림을 전송하는 DeadLetterQueue 구성한 분리 설계.
    - Exchange Topic 전략을 통해 패턴 매칭으로 구성하여 다수의 워커 서버를 가동해도 무리없는 확장을 설계.
-   - 파일 변환의 경우 순서 보장이 무관하여 Throughput 을 모니터링하고 서버 사양에 맞는 리스너의 쓰레드를 조정(V2 기준 동시 처리 쓰레드 갯수: 3,3으로 정한 근거 필요함).
-   - Acknowledgment 를 개발자가 직접 커스텀해서 작업 완료 시점에만 Ack를 전송하여 원자성을 보장하며 네트워크 지연 등 일시적 장애에도 최대 3회까지 재처리하도록 구성.
-   - 변환이 실패하여 DeadLetterQueue 로 이관 시 관리자의 Slack 메세지로 알림 전송되도록 구현.
+   - Throughput 을 모니터링하고 서버 사양에 맞는 리스너의 Concurrency 를 조정(기본: 3, 최대: 8).
+   - Acknowledgment 를 개발자가 직접 제어하여 작업 완료시점에만 Ack를 전송하여 안정성을 보장하며 일시적 장애에도 최대 3회까지 재처리
+   - 변환이 실패하여 DLQ 로 이관 시 관리자의 Slack 메세지로 알림 전송되도록 구현.
  - #### CDC 를 통한 이벤트 트리거 최적화(Debezium)
    - Docker 컨테이너를 활용하여 독립적인 Debezium 서버를 구성.
-   - 대상 테이블의 Create Operation 이 발생된 log를 추적하여 메시지 큐의 이벤트 트리거로 구성하였으며 RabbitMQ Publisher 역할을 하도록 구현.
+   - 대상 테이블의 Bin-Log를 감지하여 메시지큐 Publisher 역할을 하도록 구현.
  - #### Redis + Server-Sent-Event를 통한 실시간 상태 동기화
      - SSE 구현 및 생명 주기 설정(30분).
-     - Redis 의 Pub/Sub 구조를 통해 Worker 서버 -> API 서버로 진행 상태를 비동기 전송.
+     - Redis 의 Pub/Sub 구조를 통해 Worker 서버에서 API 서버로 진행 상태를 비동기 전송.
      - DB의 업데이트 트랜잭션 발생 시 해당 이벤트를 SSE 를 통해 프론트로 전송 로직 및 프론트단과의 통신 API 구현.
  - #### S3
    - 개발 편의성을 위해 AWS SDK를 통한 S3 버킷의 이미지 생명주기 관리 로직 구현.
    - Worker 서버에서 변환 작업 시 직접적인 S3 간의 upload/download 가 필요하여 구현.
+   - VPC Endpoint 를 적용하여 서버와 S3 간의 데이터 전송 경로를 내부망으로 돌려 S3 Network Latency 10% 개선 
  - #### Prometheus + Grafana
-   - Worker 서버,RabbitMQ 의 커스텀 모니터링 구축.
-   - Worker 서버의 임계치를 평가하기 위한 CPU,Memory,GC,Thread 기반으로 구성(최소,최대,평균 수치).
-   - RabbitMQ 를 기준으로 Ack 시점에 따른 분당 Throughput 을 확인하여 Worker 서버의 처리량 산출하여 최소 서버 스펙 산출(분당 Throughput 수치).
+   - Worker 서버, RabbitMQ 의 커스텀 모니터링 구축.
+   - Worker 서버의 동시 처리수에 따른 처리량,S3 Network Latency 등의 패널 구성
+   - RabbitMQ 를 기준으로 Ack 시점에 따른 분당 Throughput 을 확인하여 Worker 서버의 처리량 산출.
  - ## Front
  - #### CSS
    - Bootstrap 5와 Custom CSS를 활용하여 사용자 몰입감을 높이는 다크 모드 인터페이스 제작.
@@ -188,7 +190,6 @@
    </br>
    </br>
    
-
 ### 진승우
 - ### Backend / Infra
 - AWS 클라우드 아키텍처 설계 및 구축
@@ -237,12 +238,18 @@
     - 이벤트 전파: 애플리케이션이 직접 Queue 로 메세지를 넣지않고 이벤트 발행 테이블을 별도로 구성한 뒤 해당 테이블을 감지하여 메세지를 발행하도록 CDC 도입
     - 진행 상태 피드백: 변환 단계별 진행 상태를 담은 메세지를 API 서버로 발행하고 사용자는 실시간으로 진행 상황을 확인할 수 있음
 
- ### - Debezium(CDC) 을 통한 Message Publishing 이슈
+ ### - Debezium(CDC) 도입
   - #### 문제:
+    - HTTP Polling Schedulling 으로 인한 비효율적인 리소스 점유
+    - API 서버가 죽으면 메시지큐로 발행하는 역할도 수행이 불가
     - Debezium 이 발행한 메세지가 RabbitMQ 의 Queue 로 라우팅되지 않고 유실되는 상황이 발생됨
   - #### 원인 분석:
-    -  데이터 로그 분석:RabbitMQ Admin 설정을 부여하여 Tracing Log 생성하여 확인 결과, Debezium 이 발행하는 메세지의 routingKey 가 명시한대로 바인딩되지않고 빈값으로 확인됨, 이에 따라 Debezium 이 메세지를 발행하기전 명시한 routingKey 를 찾지못해 빈 값이 들어간 것으로 유추함
-  - #### 해결:
+    - 커넥션 점유 현상: 테이블에 데이터 유무와 상관없이 주기적으로 테이블을 스캔하기위해 커넥션을 지속적으로 점유하게 됨
+    - 관심사 분리: API 서버가 테이블을 직접 확인하고 메시지큐로 전달하는 방식으로 인해 메시지큐는 API 서버에게 의존성을 가지는 현상이 발생함 
+    - 데이터 로그 분석: RabbitMQ Admin 설정을 부여하여 Tracing Log 생성하여 확인 결과, Debezium 이 발행하는 메세지의 routingKey 가 명시한대로 바인딩되지않고 빈값으로 확인됨, 이에 따라 Debezium 이 메세지를 발행하기전 명시한 routingKey 를 찾지못해 빈 값이 들어간 것으로 유추함
+  - #### 해결: 
+    - Debezium 도입: Bin-Log 감지 기반의 Change Data Capture(CDC) 를 도입하여 비효율적인 HTTP Polling Schedulling 방식을 제거하고 데이터베이스 I/O 부하 감소
+    - 명확해진 EDA 구조: API 서버와 메시지 발행 역할을 분리하고 이벤트 기반으로 동작하는 아키텍처를 구현하여 강결합을 해소    
     - 버전 특성 파악: Debezium 공식 문서 확인, Debezium 3.4 버전의 경우 지속적으로 업데이트되면서 내부적으로 routingKey Naming Convention이 엄격해지며 기존의 소문자 형식이 아닌 CamelCase로 작성해야 함을 확인하여 수정 후 정상적으로 바인딩되어 메세지를 발행할 수 있었음
    
 --- 
