@@ -189,15 +189,10 @@
    </br>
    </br>
    </br>
-   
-### 진승우
-- ### Backend / Infra
-- AWS 클라우드 아키텍처 설계 및 구축
-  - Route 53, ACM, ALB를 활용하여 사용자 요청이 HTTPS로 안전하게 유입되도록 구성
-  - API EC2, Worker EC2, RDS를 Private Subnet에 배치하고, NAT Gateway를 통해 필요한 아웃바운드 통신만 허용하도록 설계
-  - Session Manager 기반으로 서버 운영 환경을 구성하여 퍼블릭 SSH 포트 개방 없이 인스턴스에 접근할 수 있도록 구축
-  - S3를 파일 저장소로 연동하고, 업로드/변환 흐름에 맞는 네트워크 구조를 설계
 
+---
+## 진승우
+- ### Backend
 - 파일 업로드 API 설계 및 구현
   - `upload-init` / `upload-complete` 2단계 업로드 API를 구현
   - 서버가 직접 S3 Key와 UUID 기반 파일명을 생성하여 클라이언트의 임의 경로 업로드를 방지
@@ -208,21 +203,44 @@
   - Redis Hash(`stats:global`) 기반으로 서비스 전체 누적 변환 건수와 용량을 관리
   - SSE 연결 시 최신 전역 통계 값을 즉시 내려주고, 변경 발생 시 전체 구독자에게 브로드캐스트하도록 구현
   - 서비스 전체 기준 통계를 별도로 분리하여 개별 파일 진행률과 전역 누적 통계가 섞이지 않도록 설계
+  - 서버 기동 시 `@PostConstruct`로 DB 집계 테이블의 통계 값을 Redis에 선제 적재(Cache Warm-up)하여, 다수의 SSE 연결 요청이 동시에 유입되어도 DB를 직접 조회하는 Thundering Herd 현상을 방지
 
 - Redis / DB 정합성 보정 로직 구현
   - 1분 주기의 스케줄러를 통해 Redis 전역 통계를 DB 단일 집계 테이블에 flush 하도록 구현
   - 자정 기준 스케줄러를 통해 History 테이블 완료 이력을 다시 집계하고 Redis / DB 값을 overwrite 하여 정합성을 보정
-  - 단일 PK(`global`) 기반의 집계 테이블 구조를 사용하여 Hot Row 문제를 최소화하면서 누적 통계를 안정적으로 유지
+  - 실시간 업데이트는 Redis에서 atomic increment로 처리하고 DB는 60초마다 한 번만 flush하는 구조로, 단일 집계 행(`stats_key = 'global'`)에 동시 UPDATE가 몰리는 Hot Row 문제를 방지
   - Redis 기반 실시간 조회를 중심으로 구현했으며, 장애 상황에서의 복구를 위해 DB 집계 테이블 fallback 구조를 설계했습니다.
 
 - RMQ / CDC
   - 비동기 변환 요청의 신뢰성을 높이기 위해 Outbox 패턴을 적용했습니다.
   - 업로드 완료 시 Debezium CDC가 Outbox 테이블의 변경을 감지해 RabbitMQ로 이벤트를 발행하도록 구성했습니다.
   - 이를 통해 애플리케이션이 직접 브로커에 즉시 publish하는 구조보다 이벤트 유실 가능성을 줄였습니다.
+
+
+- ### Infra
+- AWS 클라우드 아키텍처 설계 및 구축
+  - Route 53, ACM, ALB를 활용하여 사용자 요청이 HTTPS로 안전하게 유입되도록 구성
+  - API EC2, Worker EC2, RDS를 Private Subnet에 배치하고, NAT Gateway를 통해 필요한 아웃바운드 통신만 허용하도록 설계
+  - Session Manager 기반으로 서버 운영 환경을 구성하여 퍼블릭 SSH 포트 개방 없이 인스턴스에 접근할 수 있도록 구축
+  - S3를 파일 저장소로 연동하고, 업로드/변환 흐름에 맞는 네트워크 구조를 설계
  
-- ci / cd
-- s3 바이러스 검사
-- 이미지 최적화
+- AutoScaling
+  - RabbitMQ는 AWS 관리형 서비스가 아니라 CloudWatch가 큐 깊이를 자동 수집하지 않으므로, Lambda + EventBridge를 통해 커스텀 메트릭 파이프라인을 직접 구성
+  - Python 3.12 Lambda가 1분마다 EventBridge로 트리거되어 RabbitMQ Management API를 폴링하고, `FileConversion/Worker` 네임스페이스에 `RabbitMQQueueDepth` 커스텀 메트릭을 CloudWatch에 발행
+  - CloudWatch 알람이 해당 메트릭을 기준으로 Worker ASG Step Scaling 정책을 트리거
+    - 스케일 아웃: 큐 ≥ 100이 **2분 지속** 시 발동 (큐 100~300 → +1대 / 300~500 → +2대 / 500초과 → +3대)
+    - 스케일 인: 큐 ≤ 10이 **5분 지속** 시 발동 (−1대)
+  - Worker 앱에 Graceful Shutdown(120초)을 적용하여 스케일 인 시 처리 중인 변환 작업이 중단되지 않도록 보장
+  - Lambda, EventBridge, CloudWatch 알람, Step Scaling 정책, Route53 Private Hosted Zone 전체를 Terraform으로 IaC 관리하여 인프라 형상을 코드로 버전 관리
+    
+- CI / CD
+  - **CI**: JDK 17 환경에서 Gradle 테스트 자동 실행, Gradle 캐시를 활용하여 빌드 시간을 단축
+  - **CD**: GitHub OIDC 기반으로 AWS 인증하여 별도의 IAM Access Key 없이 안전하게 배포 진행
+  - Docker Buildx로 `linux/amd64` 이미지 빌드 후 ECR에 푸시, 이미지 태그는 `YYYYMMDD-HHMM-{run_number}` 형식으로 생성하여 배포 이력 추적 가능
+  - **API 서버**: EC2 Name 태그(`fileconversion-api`)로 실행 중인 인스턴스를 동적 조회하여 SSM Run Command로 배포 스크립트 실행
+  - **Worker 서버**: ASG 그룹 태그(`aws:autoscaling:groupName`)를 통해 Fleet 전체를 대상으로 SSM Run Command 발송, 배포 전 `docker system prune`으로 디스크 정리 선행, Fleet 배포는 SSM wait 미지원으로 직접 폴링하여 전체 인스턴스 성공 여부 확인
+  - 이미지 태그를 SSM Parameter Store(`/fileconversion/worker/image-tag`)에 기록하여 ASG로 새로 띄워지는 인스턴스도 동일한 이미지로 기동되도록 보장
+
 ---
 ## 8.트러블 슈팅
 ### 김주원
@@ -251,7 +269,10 @@
     - Debezium 도입: Bin-Log 감지 기반의 Change Data Capture(CDC) 를 도입하여 비효율적인 HTTP Polling Schedulling 방식을 제거하고 데이터베이스 I/O 부하 감소
     - 명확해진 EDA 구조: API 서버와 메시지 발행 역할을 분리하고 이벤트 기반으로 동작하는 아키텍처를 구현하여 강결합을 해소    
     - 버전 특성 파악: Debezium 공식 문서 확인, Debezium 3.4 버전의 경우 지속적으로 업데이트되면서 내부적으로 routingKey Naming Convention이 엄격해지며 기존의 소문자 형식이 아닌 CamelCase로 작성해야 함을 확인하여 수정 후 정상적으로 바인딩되어 메세지를 발행할 수 있었음
-   
+
+### 진승우
+
+
 --- 
 ## 9.추후 도입예정 기능
 
@@ -265,9 +286,14 @@
   - 일별 변환 횟수 통계 조회
 - 리드미 실시간 변환 현황 
 - api, worker, cdc 앱 모듈화 v 
-- 업로드 이미지 최적화
 - s3 바이러스 검사
-
+- History 테이블 완료 이력 조회 방식 변경
+  - 현재: 자정 기준 스케줄러로 History 테이블 전체를 재집계하여 Redis / DB 값을 overwrite
+  - 문제: 전체 테이블 스캔으로 데이터 누적 시 부하가 증가하고, 즉시 정합성이 필요한 시점(Redis 장애 복구 직후)에 자정까지 대기해야 하는 구조
+  - 개선 방향: 마지막 집계 시점(timestamp) 이후 변경된 이력만 증분 집계하는 방식으로 전환하여 전체 테이블 스캔 부하를 제거하고, 보정 주기를 단축하거나 이벤트 기반으로 트리거
+- CD 방식 변경 (Auto Scaling 대비)
+  - 현재 SSM Run Command 방식은 CD 시점에 실행 중인 인스턴스에만 배포되어, 이후 스케일 아웃으로 추가된 인스턴스는 구버전으로 기동될 위험이 있음
+  - Launch Template 기반의 Instance Refresh 방식으로 전환하여 스케일 아웃 시에도 항상 최신 버전이 보장되는 구조로 개선 예정
 
 
 
