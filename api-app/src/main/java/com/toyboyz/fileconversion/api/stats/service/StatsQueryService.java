@@ -28,6 +28,13 @@ public class StatsQueryService {
     private final StringRedisTemplate redisTemplate;
     private final ConversionStatsTotalRepository conversionStatsTotalRepository;
 
+    /**
+     * 서버 시작 시 1회 실행.
+     * 부팅 직후 Redis에 통계 값을 미리 채워둔다.
+     *
+     * 이렇게 해두면 첫 요청들이 동시에 들어와도 모두 Redis에서 바로 읽어가므로
+     * 동시 다발 DB 조회(Thundering Herd)로 풀이 고갈되는 현상을 막을 수 있다.
+     */
     private final ReentrantLock dbFallbackLock = new ReentrantLock();
 
     private final Cache<String, StatsSummaryResponse> fallbackCache =
@@ -42,6 +49,8 @@ public class StatsQueryService {
             ensureGlobalStatsKey();
             log.info("[StatsQueryService] 시작 시 Redis 통계 캐시 워밍업 완료");
         } catch (Exception e) {
+            // Redis가 부팅 시점에 아직 안 떠있을 수 있으므로 실패해도 부팅은 막지 않음.
+            // 첫 getSummary() 호출 시 ensureGlobalStatsKey()가 다시 시도함.
             log.warn("[StatsQueryService] 시작 시 워밍업 실패 (Redis 미가용 가능): {}", e.getMessage());
         }
     }
