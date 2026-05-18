@@ -270,7 +270,7 @@
 ### 진승우
   ### - Redis 호스트 고정 참조로 인한 연쇄 장애 (Thundering Herd → Hikari 풀 고갈)
   - #### 문제:
-  - RMQ EC2 재기동 시 IP가 변경되면서 Redis 연결이 단절되고, SSE 구독 중인 다수의 클라이언트가 동시에 DB로 fallback → Hikari 커넥션 풀 고갈 → DB 조회까지 실패하는 연쇄 장애 발생
+    - RMQ EC2 재기동 시 IP가 변경되면서 Redis 연결이 단절되고, SSE 구독 중인 다수의 클라이언트가 동시에 DB로 fallback → Hikari 커넥션 풀 고갈 → DB 조회까지 실패하는 연쇄 장애 발생
   
   - #### 원인 분석:
     - Redis IP 하드코딩: application.yml에 Redis 호스트를 IP 주소로 직접 명시해 두었기 때문에, EC2가 교체되어 IP가 바뀌는 순간 Redis 연결이 단절됨
