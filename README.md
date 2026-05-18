@@ -23,7 +23,7 @@
 
 | 김주원 | 진승우 |
 | :---: | :---: |
-| <img src="" width="200" alt="김주원 프로필 사진"> | <img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/940719ea-ab91-45d1-9cb6-7415b6777f02" /> |
+| <img src="" width="200" alt="김주원 프로필 사진"> | <img width="300" height="300" alt="image" src="https://github.com/user-attachments/assets/940719ea-ab91-45d1-9cb6-7415b6777f02" /> |
 | [@goyois](https://github.com/goyois) | [@SeungWoo1222](https://github.com/SeungWoo1222) |
 
 ---
