@@ -23,7 +23,7 @@
 
 | 김주원 | 진승우 |
 | :---: | :---: |
-| <img src="" width="200" alt="김주원 프로필 사진"> | <img src="" width="200" alt="진승우 프로필 사진"> |
+| <img src="" width="200" alt="김주원 프로필 사진"> | <img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/940719ea-ab91-45d1-9cb6-7415b6777f02" /> |
 | [@goyois](https://github.com/goyois) | [@SeungWoo1222](https://github.com/SeungWoo1222) |
 
 ---
@@ -191,55 +191,50 @@
    </br>
 
 ---
+
 ## 진승우
-- ### Backend
-- 파일 업로드 API 설계 및 구현
+- ## Backend
+- #### 파일 업로드 API 설계 및 구현
   - `upload-init` / `upload-complete` 2단계 업로드 API를 구현
-  - 서버가 직접 S3 Key와 UUID 기반 파일명을 생성하여 클라이언트의 임의 경로 업로드를 방지
-  - Presigned URL 기반 업로드를 적용하여, 클라이언트가 API 서버를 거치지 않고 S3에 직접 파일을 업로드하도록 구성했습니다.
-  - API 서버는 파일 자체를 중계하지 않고 업로드 경로 생성, URL 발급, 업로드 완료 검증만 담당하도록 분리했습니다.
+  - 서버가 UUID 기반 S3 Key를 직접 생성하여 클라이언트의 임의 경로 업로드 방지
+  - Presigned URL로 클라이언트가 S3에 직접 업로드, API 서버는 경로 생성·URL 발급·완료 검증만 담당
 
-- 실시간 전역 통계 기능 구현
-  - Redis Hash(`stats:global`) 기반으로 서비스 전체 누적 변환 건수와 용량을 관리
-  - SSE 연결 시 최신 전역 통계 값을 즉시 내려주고, 변경 발생 시 전체 구독자에게 브로드캐스트하도록 구현
-  - 서비스 전체 기준 통계를 별도로 분리하여 개별 파일 진행률과 전역 누적 통계가 섞이지 않도록 설계
-  - 서버 기동 시 `@PostConstruct`로 DB 집계 테이블의 통계 값을 Redis에 선제 적재(Cache Warm-up)하여, 다수의 SSE 연결 요청이 동시에 유입되어도 DB를 직접 조회하는 Thundering Herd 현상을 방지
+- #### 실시간 전역 통계 기능 구현
+  - Redis Hash(`stats:global`)로 누적 변환 건수·용량 관리
+  - SSE 연결 시 최신 통계 즉시 전달, 변경 발생 시 전체 구독자 브로드캐스트
+  - 개별 파일 진행률 채널과 전역 통계 채널을 분리하여 데이터 혼선 방지
+  - `@PostConstruct` Cache Warm-up으로 서버 기동 직후 다수 SSE 요청의 Thundering Herd 방지
 
-- Redis / DB 정합성 보정 로직 구현
-  - 1분 주기의 스케줄러를 통해 Redis 전역 통계를 DB 단일 집계 테이블에 flush 하도록 구현
-  - 자정 기준 스케줄러를 통해 History 테이블 완료 이력을 다시 집계하고 Redis / DB 값을 overwrite 하여 정합성을 보정
-  - 실시간 업데이트는 Redis에서 atomic increment로 처리하고 DB는 60초마다 한 번만 flush하는 구조로, 단일 집계 행(`stats_key = 'global'`)에 동시 UPDATE가 몰리는 Hot Row 문제를 방지
-  - Redis 기반 실시간 조회를 중심으로 구현했으며, 장애 상황에서의 복구를 위해 DB 집계 테이블 fallback 구조를 설계했습니다.
+- #### Redis / DB 정합성 보정 로직 구현
+  - Redis atomic increment 처리 + 60초 주기 DB flush로 단일 집계 행 Hot Row 방지
+  - 자정 스케줄러로 History 테이블 전체 재집계 후 Redis·DB 동시 overwrite
+  - Redis 장애 시 DB 집계 테이블에서 복구하는 fallback 구조 설계
 
-- RMQ / CDC
-  - 비동기 변환 요청의 신뢰성을 높이기 위해 Outbox 패턴을 적용했습니다.
-  - 업로드 완료 시 Debezium CDC가 Outbox 테이블의 변경을 감지해 RabbitMQ로 이벤트를 발행하도록 구성했습니다.
-  - 이를 통해 애플리케이션이 직접 브로커에 즉시 publish하는 구조보다 이벤트 유실 가능성을 줄였습니다.
+- #### RMQ / Outbox / CDC
+  - Outbox 패턴 적용으로 애플리케이션이 브로커에 직접 publish하는 구조 대비 이벤트 유실 가능성 감소
+  - 업로드 완료 시 Debezium CDC가 Outbox 테이블 변경을 감지해 RabbitMQ로 이벤트 발행
+  - 이를 통해 이벤트 유실 가능성을 줄이고, 불필요한 DB 부하를 제거
+<br>
 
-
-- ### Infra
-- AWS 클라우드 아키텍처 설계 및 구축
-  - Route 53, ACM, ALB를 활용하여 사용자 요청이 HTTPS로 안전하게 유입되도록 구성
-  - API EC2, Worker EC2, RDS를 Private Subnet에 배치하고, NAT Gateway를 통해 필요한 아웃바운드 통신만 허용하도록 설계
-  - Session Manager 기반으로 서버 운영 환경을 구성하여 퍼블릭 SSH 포트 개방 없이 인스턴스에 접근할 수 있도록 구축
-  - S3를 파일 저장소로 연동하고, 업로드/변환 흐름에 맞는 네트워크 구조를 설계
+- ## Infra
+- #### AWS 클라우드 아키텍처 설계 및 구축
+  - Route 53, ACM, ALB로 HTTPS 트래픽 유입 구성
+  - API EC2·Worker EC2·RDS를 Private Subnet에 배치, NAT Gateway로 아웃바운드 통신 제한
+  - Session Manager 기반 접근으로 퍼블릭 SSH 포트 미개방
+  - S3 파일 저장소 연동 및 업로드·변환 흐름에 맞는 네트워크 구조 설계
  
-- AutoScaling
-  - RabbitMQ는 AWS 관리형 서비스가 아니라 CloudWatch가 큐 깊이를 자동 수집하지 않으므로, Lambda + EventBridge를 통해 커스텀 메트릭 파이프라인을 직접 구성
-  - Python 3.12 Lambda가 1분마다 EventBridge로 트리거되어 RabbitMQ Management API를 폴링하고, `FileConversion/Worker` 네임스페이스에 `RabbitMQQueueDepth` 커스텀 메트릭을 CloudWatch에 발행
-  - CloudWatch 알람이 해당 메트릭을 기준으로 Worker ASG Step Scaling 정책을 트리거
-    - 스케일 아웃: 큐 ≥ 100이 **2분 지속** 시 발동 (큐 100~300 → +1대 / 300~500 → +2대 / 500초과 → +3대)
-    - 스케일 인: 큐 ≤ 10이 **5분 지속** 시 발동 (−1대)
-  - Worker 앱에 Graceful Shutdown(120초)을 적용하여 스케일 인 시 처리 중인 변환 작업이 중단되지 않도록 보장
-  - Lambda, EventBridge, CloudWatch 알람, Step Scaling 정책, Route53 Private Hosted Zone 전체를 Terraform으로 IaC 관리하여 인프라 형상을 코드로 버전 관리
+- #### AutoScaling
+  - RabbitMQ가 비관리형 서비스라 CloudWatch 자동 수집 불가 → Lambda + EventBridge로 커스텀 메트릭 파이프라인 직접 구성
+  - 1분마다 Lambda가 RabbitMQ Management API를 폴링하여 `RabbitMQQueueDepth`를 CloudWatch에 발행
+  - Step Scaling: 큐 ≥ 100이 2분 지속 시 스케일 아웃, 큐 ≤ 10이 5분 지속 시 스케일 인
+  - Graceful Shutdown 120초 적용으로 스케일 인 시 처리 중인 변환 작업 보호
+  - Lambda·EventBridge·CloudWatch·Step Scaling·Route53 전체를 Terraform IaC로 관리
     
-- CI / CD
-  - **CI**: JDK 17 환경에서 Gradle 테스트 자동 실행, Gradle 캐시를 활용하여 빌드 시간을 단축
-  - **CD**: GitHub OIDC 기반으로 AWS 인증하여 별도의 IAM Access Key 없이 안전하게 배포 진행
-  - Docker Buildx로 `linux/amd64` 이미지 빌드 후 ECR에 푸시, 이미지 태그는 `YYYYMMDD-HHMM-{run_number}` 형식으로 생성하여 배포 이력 추적 가능
-  - **API 서버**: EC2 Name 태그(`fileconversion-api`)로 실행 중인 인스턴스를 동적 조회하여 SSM Run Command로 배포 스크립트 실행
-  - **Worker 서버**: ASG 그룹 태그(`aws:autoscaling:groupName`)를 통해 Fleet 전체를 대상으로 SSM Run Command 발송, 배포 전 `docker system prune`으로 디스크 정리 선행, Fleet 배포는 SSM wait 미지원으로 직접 폴링하여 전체 인스턴스 성공 여부 확인
-  - 이미지 태그를 SSM Parameter Store(`/fileconversion/worker/image-tag`)에 기록하여 ASG로 새로 띄워지는 인스턴스도 동일한 이미지로 기동되도록 보장
+- #### CI / CD
+  - **CI**: Gradle 테스트 자동 실행, Gradle 캐시로 빌드 시간 단축
+  - **CD**: GitHub OIDC 기반 AWS 인증으로 IAM Access Key 없이 배포
+  - API·Worker 이미지를 ECR에 푸시, 태그 형식 `YYYYMMDD-HHMM-{run_number}`으로 배포 이력 추적
+  - 이미지 태그를 SSM Parameter Store에 기록하여 스케일 아웃 후 새 인스턴스도 동일 버전으로 기동 보장
 
 ---
 ## 8.트러블 슈팅
@@ -270,8 +265,39 @@
     - 명확해진 EDA 구조: API 서버와 메시지 발행 역할을 분리하고 이벤트 기반으로 동작하는 아키텍처를 구현하여 강결합을 해소    
     - 버전 특성 파악: Debezium 공식 문서 확인, Debezium 3.4 버전의 경우 지속적으로 업데이트되면서 내부적으로 routingKey Naming Convention이 엄격해지며 기존의 소문자 형식이 아닌 CamelCase로 작성해야 함을 확인하여 수정 후 정상적으로 바인딩되어 메세지를 발행할 수 있었음
 
-### 진승우
+---
 
+### 진승우
+  ### - Redis 호스트 고정 참조로 인한 연쇄 장애 (Thundering Herd → Hikari 풀 고갈)
+  - #### 문제:
+  - RMQ EC2 재기동 시 IP가 변경되면서 Redis 연결이 단절되고, SSE 구독 중인 다수의 클라이언트가 동시에 DB로 fallback → Hikari 커넥션 풀 고갈 → DB 조회까지 실패하는 연쇄 장애 발생
+  
+  - #### 원인 분석:
+    - Redis IP 하드코딩: application.yml에 Redis 호스트를 IP 주소로 직접 명시해 두었기 때문에, EC2가 교체되어 IP가 바뀌는 순간 Redis 연결이 단절됨
+    - Thundering Herd: Redis가 다운되자 SSE를 유지하고 있던 수백 개의 스레드가 일제히 DB로 fallback → Hikari 풀 10개 즉시 고갈 → Connection timed out 발생
+    - 두 장애가 연쇄적으로 발생하여 Redis도, DB도 응답하지 못하는 이중 불가 상태로 악화됨
+
+  - #### 해결:
+    - Redis 연결 안정화: Route53 Private Hosted Zone에 redis.internal DNS 등록, IP 직접 참조 제거
+    - DB 커넥션 풀 고갈 방지: Redis 장애 시 ReentrantLock.tryLock()으로 단 하나의 스레드만 DB 조회를 실행하고, 결과를 Caffeine 로컬 캐시(TTL 60s)에 저장하여 나머지 스레드는 캐시에서 서빙. Redis 복구 후 TTL 만료 시 자동으로 Redis 경로로 복귀
+
+<br>
+
+  ### - Debezium 크래시 루프 (Worker Auto Scaling)
+  - #### 문제:
+    - Auto Scaling 테스트 중 ASG가 새 Worker 인스턴스를 생성할 때마다 Debezium이 약 10~13초 간격으로 크래시 루프를 반복하며 정상 기동되지 않음
+
+  - #### 원인 분석:
+    - **binlog 유실**: AMI에 포함된 offsets.dat가 참조하는 binlog를 RDS가 이미 삭제한 상태 → 존재하지 않는 binlog 위치를 참조하며 ERROR → STOPPING 반복
+    - **server_id 충돌**: offsets.dat 삭제 후 재시도했으나 Worker 2대의 Debezium이 동일 server_id로 MySQL에 동시 접속 → 서로를 연결에서 밀어내는 핑퐁 크래시로 번짐
+    - **근본 원인**: Debezium이 스케일 아웃 대상인 Worker EC2에 함께 배포된 구조. Worker가 N대로 늘어나면 Debezium도 N개가 떠서 중복 발행과 충돌이 필연적으로 발생
+
+  - #### 해결:
+    - Debezium은 Worker 수와 무관하게 단 1개만 있으면 충분하므로, Worker EC2에서 분리하여 스케일링 범위 밖인 RMQ EC2로 이전
+    - **[Before]** Worker EC2 × N대 — Worker App + Debezium
+    - **[After]** RMQ EC2(고정) — RabbitMQ + Redis + Debezium / Worker EC2 × N대 — Worker App만
+
+<br>
 
 --- 
 ## 9.추후 도입예정 기능
