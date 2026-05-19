@@ -128,7 +128,8 @@
 
 ---
 ## 5.클라우드 아키텍처
-<img width="1140" height="699" alt="image" src="https://github.com/user-attachments/assets/bd402850-4e55-4b76-9cc5-e28e6002fc18" />
+<img width="1061" height="758" alt="image" src="https://github.com/user-attachments/assets/e8e6e923-415d-488f-8503-88118167c195" />
+
 
 
 ---
