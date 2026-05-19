@@ -269,19 +269,19 @@
 ---
 
 ### 진승우
-  ### - Redis 호스트 고정 참조로 인한 연쇄 장애 (Thundering Herd → Hikari 풀 고갈)
+  ### - 부하 테스트 중 Redis 재기동 시 발견된 Thundering Herd → Hikari 풀 고갈
   - #### 문제:
-    - RMQ EC2 재기동 시 IP가 변경되면서 Redis 연결이 단절되고, SSE 구독 중인 다수의 클라이언트가 동시에 DB로 fallback → Hikari 커넥션 풀 고갈 → DB 조회까지 실패하는 연쇄 장애 발생
+    - 부하 테스트 도중 Redis 서버를 재기동하는 과정에서 일시적으로 Redis 연결이 단절됨. SSE를 구독 중이던 다수의 클라이언트가 동시에 DB fallback을 시도 → Hikari 풀 10개 즉시 고갈 → Connection timed out으로 Redis도 DB도 응답 불가한 이중 장애 발생
   
   - #### 원인 분석:
-    - Redis IP 하드코딩: application.yml에 Redis 호스트를 IP 주소로 직접 명시해 두었기 때문에, EC2가 교체되어 IP가 바뀌는 순간 Redis 연결이 단절됨
-    - Thundering Herd: Redis가 다운되자 SSE를 유지하고 있던 수백 개의 스레드가 일제히 DB로 fallback → Hikari 풀 10개 즉시 고갈 → Connection timed out 발생
-    - 두 장애가 연쇄적으로 발생하여 Redis도, DB도 응답하지 못하는 이중 불가 상태로 악화됨
-
+    - fallback 구조 문제: Redis 장애 시 DB로 fallback하는 로직에 동시성 제어가 없어, 모든 스레드가 일제히 DB로 몰리는 Thundering Herd 발생
+    - 풀 한계 초과: 순간적으로 수백 개의 스레드가 동시에 DB 커넥션을 요청하면서 Hikari 풀 10개가 즉시 고갈, Connection timed out으로 DB 조회까지 실패
+      
   - #### 해결:
-    - Redis 연결 안정화: Route53 Private Hosted Zone에 redis.internal DNS 등록, IP 직접 참조 제거
-    - DB 커넥션 풀 고갈 방지: Redis 장애 시 ReentrantLock.tryLock()으로 단 하나의 스레드만 DB 조회를 실행하고, 결과를 Caffeine 로컬 캐시(TTL 60s)에 저장하여 나머지 스레드는 캐시에서 서빙. Redis 복구 후 TTL 만료 시 자동으로 Redis 경로로 복귀
-
+    - ReentrantLock.tryLock()으로 단 하나의 스레드만 DB 조회를 실행
+    - 결과를 Caffeine 로컬 캐시(TTL 60s)에 저장, 나머지 스레드는 캐시에서 서빙
+    - Redis 복구 후 TTL 만료 시 자동으로 Redis 경로로 복귀
+      
 <br>
 
   ### - Debezium 크래시 루프 (Worker Auto Scaling)
