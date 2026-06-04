@@ -3,6 +3,9 @@ package com.toyboyz.fileconversion.api.file.service;
 import com.toyboyz.fileconversion.api.file.dto.request.UploadCompleteRequest;
 import com.toyboyz.fileconversion.api.file.dto.request.UploadInitRequest;
 import com.toyboyz.fileconversion.api.file.dto.response.UploadInitResponse;
+import com.toyboyz.fileconversion.api.global.exception.FileUploadNotConfirmedException;
+import com.toyboyz.fileconversion.api.global.exception.InvalidFileException;
+import com.toyboyz.fileconversion.api.global.exception.UnauthorizedAccessException;
 import com.toyboyz.fileconversion.api.history.entitiy.History;
 import com.toyboyz.fileconversion.api.history.service.HistoryService;
 import com.toyboyz.fileconversion.infra.s3.service.S3StorageService;
@@ -69,19 +72,40 @@ public class FileService {
     public List<History> uploadComplete(UploadCompleteRequest req) {
         List<History> histories = historyService.getByIds(req.historyIds());
 
-        // 1) uuid 검증 + S3 존재 확인
+        // 1) uuid 검증 + S3 존재 확인 + Magic Bytes 검증
         for (History h : histories) {
             if (!Objects.equals(h.getUuid(), req.uuid())) {
-                throw new IllegalArgumentException("uuid가 일치하지 않는 history가 포함되어 있습니다. historyId=" + h.getHistoryId());
+                throw new UnauthorizedAccessException("uuid가 일치하지 않는 history가 포함되어 있습니다. historyId=" + h.getHistoryId());
             }
             if (!s3StorageService.exists(h.getOriginalFile())) {
-                throw new IllegalStateException("S3 업로드가 확인되지 않았습니다. key=" + h.getOriginalFile());
+                throw new FileUploadNotConfirmedException("S3 업로드가 확인되지 않았습니다. key=" + h.getOriginalFile());
             }
+            validateMagicBytes(h.getOriginalFile(), h.getOriginalFile());
         }
 
         // 2) DB 상태 변경 + outbox 생성은 HistoryService에게 위임
         historyService.markUploadedAndCreateConvertOutbox(histories);
         return historyService.getByIds(req.historyIds());
+    }
+
+    // 파일 앞 바이트로 실제 파일 형식 검증 (확장자 위장 방지)
+    private void validateMagicBytes(String s3Key, String fileName) {
+        byte[] header = s3StorageService.readHeader(s3Key, 8);
+        String ext = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
+
+        boolean valid = switch (ext) {
+            case "png"        -> header[0] == (byte) 0x89 && header[1] == 0x50;
+            case "jpg", "jpeg"-> header[0] == (byte) 0xFF && header[1] == (byte) 0xD8;
+            case "gif"        -> header[0] == 0x47 && header[1] == 0x49; // GI
+            case "bmp"        -> header[0] == 0x42 && header[1] == 0x4D; // BM
+            case "pdf"        -> header[0] == 0x25 && header[1] == 0x50; // %P
+            default           -> false;
+        };
+
+        if (!valid) {
+            s3StorageService.delete(s3Key);
+            throw new InvalidFileException("허용되지 않는 파일 형식입니다. key=" + s3Key);
+        }
     }
 
     private String buildS3Key(String uuid, String s3FileName) {
