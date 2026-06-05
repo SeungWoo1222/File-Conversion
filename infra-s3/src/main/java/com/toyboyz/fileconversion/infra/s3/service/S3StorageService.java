@@ -153,6 +153,30 @@ public class S3StorageService {
             return e.statusCode() != 404 ? true : false;
         }
     }
+
+    // Magic Bytes 검증용 - 파일 앞 N바이트만 읽음 (전체 파일 다운로드 안 함)
+    public byte[] readHeader(String key, int bytes) {
+        GetObjectRequest get = GetObjectRequest.builder()
+                .bucket(bucket)
+                .key(key)
+                .range("bytes=0-" + (bytes - 1))
+                .build();
+        try (ResponseInputStream<GetObjectResponse> is = s3Client.getObject(get)) {
+            return is.readAllBytes();
+        } catch (IOException e) {
+            throw new RuntimeException("파일 헤더 읽기 실패. key: " + key, e);
+        }
+    }
+
+    // 악성 파일 감지 시 S3에서 즉시 삭제
+    public void delete(String key) {
+        try {
+            s3Client.deleteObject(DeleteObjectRequest.builder().bucket(bucket).key(key).build());
+            log.info("악성 파일 삭제 완료. key: {}", key);
+        } catch (S3Exception e) {
+            log.error("S3 파일 삭제 실패. key: {}, error: {}", key, e.awsErrorDetails().errorMessage());
+        }
+    }
 }
 
 
