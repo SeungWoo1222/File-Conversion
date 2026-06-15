@@ -77,7 +77,7 @@ public class RabbitMQConsumerConfig {
 
 //        factory.setConcurrentConsumers(2);
 //        factory.setMaxConcurrentConsumers(2);
-//        factory.setPrefetchCount(1);
+       factory.setPrefetchCount(1);
 
         factory.setAcknowledgeMode(AcknowledgeMode.MANUAL); // 수동 Ack 모드
         return factory;
